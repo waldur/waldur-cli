@@ -19,6 +19,8 @@ Build:
     # rewrite (its built-in git support doesn't reliably apply insteadOf).
     - git config --global url."https://gitlab-ci-token:${GITLAB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "ssh://git@${CI_SERVER_HOST}/"
     - export CARGO_NET_GIT_FETCH_WITH_CLI=true
+    # The rust:bookworm image doesn't ship clippy by default.
+    - rustup component add clippy
   script:
     - cargo build --locked
     - cargo clippy --all-targets
