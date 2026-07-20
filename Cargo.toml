@@ -1,0 +1,21 @@
+[package]
+name = "waldur-cli"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Scriptable CLI for Waldur MasterMind: OpenStack resource management and team management"
+repository = "https://code.opennodecloud.com/waldur/waldur-cli"
+readme = "README.md"
+
+[[bin]]
+name = "waldur-cli"
+path = "src/main.rs"
+
+[dependencies]
+waldur-client = { git = "ssh://git@code.opennodecloud.com/waldur/rs-client.git", branch = "main" }
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+comfy-table = "7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
