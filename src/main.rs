@@ -37,7 +37,11 @@ async fn main() -> anyhow::Result<()> {
 
     let mut client = HttpClient::new().with_base_url(config.api_url);
     if let Some(token) = config.token {
-        client = client.with_api_key(token);
+        // Waldur's DRF TokenAuthentication expects the literal "Token <key>"
+        // format (not "Bearer <key>" -- that's only for the separate OIDC/PAT
+        // auth schemes). rs-client's ApiKey auth mode sends this value
+        // verbatim with no prefix, so we supply Waldur's own format here.
+        client = client.with_api_key(format!("Token {token}"));
     }
 
     if let Err(err) = cli::dispatch(&client, cli.command, cli.format).await {
