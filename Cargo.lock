@@ -1430,7 +1430,7 @@ dependencies = [
 [[package]]
 name = "waldur-client"
 version = "0.1.0"
-source = "git+https://github.com/waldur/rs-client.git?branch=main#cfcd9e799aaee00bdd17b05a10747048e468de74"
+source = "git+https://github.com/waldur/rs-client.git?branch=main#d119b5125d48a6a4063d1fc712cca5684f63db9b"
 dependencies = [
  "bytes",
  "chrono",
