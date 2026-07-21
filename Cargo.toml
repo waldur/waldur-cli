@@ -20,7 +20,14 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
-# The profile that 'dist' will build with
+# The profile that 'dist' will build with. Optimized for a small
+# distributed binary over build time or raw speed -- this CLI is I/O-bound
+# (network calls), so opt-level="z" and panic="abort" cost effectively
+# nothing at runtime in exchange for a meaningfully smaller download.
 [profile.dist]
 inherits = "release"
-lto = "thin"
+lto = "fat"
+codegen-units = 1
+opt-level = "z"
+strip = true
+panic = "abort"
