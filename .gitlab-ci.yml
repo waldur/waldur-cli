@@ -11,14 +11,8 @@ Build:
   variables:
     CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
   before_script:
-    - apt-get update && apt-get install -y --no-install-recommends git
-    # Cargo.toml's rs-client dependency uses an ssh:// URL (so local dev
-    # just works via an already-configured SSH key/agent, no extra setup).
-    # Rewrite it to HTTPS+GITLAB_TOKEN here so CI can resolve it without an
-    # SSH key, and make cargo actually shell out to git so it honors that
-    # rewrite (its built-in git support doesn't reliably apply insteadOf).
-    - git config --global url."https://gitlab-ci-token:${GITLAB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "ssh://git@${CI_SERVER_HOST}/"
-    - export CARGO_NET_GIT_FETCH_WITH_CLI=true
+    # Cargo.toml's rs-client dependency is the public GitHub mirror, so no
+    # auth/URL-rewriting is needed to resolve it here.
     # The rust:bookworm image doesn't ship clippy by default.
     - rustup component add clippy
   script:

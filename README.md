@@ -19,6 +19,24 @@ covered here (or by rs-client, which is itself scoped to OpenStack + team-manage
 edit them by hand, see that repo for how to regenerate. `src/main.rs`, `src/config.rs`, and
 `src/output.rs` are hand-written and permanent.
 
+## Installation
+
+Pre-built binaries for Linux, macOS, and Windows are published to
+[GitHub Releases](https://github.com/waldur/waldur-cli/releases) whenever a version tag is
+pushed, via [cargo-dist](https://github.com/axodotdev/cargo-dist):
+
+```bash
+# Linux/macOS
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/waldur/waldur-cli/releases/latest/download/waldur-cli-installer.sh | sh
+```
+
+```powershell
+# Windows
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/waldur/waldur-cli/releases/latest/download/waldur-cli-installer.ps1 | iex"
+```
+
+Or build from source: `cargo build --release` (needs a Rust toolchain).
+
 ## Usage
 
 ```bash
