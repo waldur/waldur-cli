@@ -21,25 +21,15 @@ pub enum RoleCommand {
 #[derive(clap::Args, Debug)]
 pub struct RoleListArgs {
     #[arg(long)]
-    pub available_for_customer: Option<String>,
-    #[arg(long)]
-    pub content_type: Option<String>,
-    #[arg(long)]
     pub description: Option<String>,
     #[arg(long)]
-    pub include_concealed: Option<bool>,
-    #[arg(long)]
     pub is_active: Option<bool>,
-    #[arg(long)]
-    pub is_system_role: Option<bool>,
     #[arg(long)]
     pub name: Option<String>,
     #[arg(long)]
     pub page: Option<i64>,
     #[arg(long)]
     pub page_size: Option<i64>,
-    #[arg(long)]
-    pub query: Option<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct RoleGetArgs {
@@ -69,18 +59,12 @@ pub async fn run(
         RoleCommand::List(args) => {
             let result = client
                 .roles_list(
-                    args.available_for_customer.as_deref(),
-                    args.content_type.as_deref(),
                     args.description.as_deref(),
                     None,
-                    args.include_concealed,
                     args.is_active,
-                    args.is_system_role,
                     args.name.as_deref(),
-                    None,
                     args.page,
                     args.page_size,
-                    args.query.as_deref(),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

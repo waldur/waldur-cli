@@ -113,7 +113,6 @@ pub async fn run(
                     args.created.as_deref(),
                     args.created_before.as_deref(),
                     None,
-                    None,
                     args.customer_abbreviation.as_deref(),
                     args.customer_name.as_deref(),
                     args.customer_native_name.as_deref(),

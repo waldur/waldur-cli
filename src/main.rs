@@ -114,7 +114,7 @@ fn logout() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 

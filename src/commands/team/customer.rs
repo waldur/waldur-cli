@@ -103,7 +103,6 @@ pub async fn run(
                     args.contact_details.as_deref(),
                     args.current_user_has_project_create_permission,
                     None,
-                    None,
                     args.has_resources.as_deref(),
                     args.is_call_managing_organization,
                     args.is_service_provider,
