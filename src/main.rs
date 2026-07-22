@@ -34,6 +34,12 @@ struct Cli {
     /// Print request/response tracing (method, URL, status, timing) to stderr
     #[arg(long, global = true)]
     debug: bool,
+
+    /// Named credential profile to use with `login`/`logout` and for
+    /// resolving stored credentials. Falls back to the WALDUR_PROFILE env
+    /// var, then "default".
+    #[arg(long, global = true)]
+    profile: Option<String>,
 }
 
 // Flattens the generated `cli::GroupCommand` variants (openstack/team) in
@@ -49,9 +55,11 @@ enum Commands {
         shell: Shell,
     },
     /// Log in and save the API URL + token to a local config file, so
-    /// later commands don't need --token/WALDUR_ACCESS_TOKEN set
+    /// later commands don't need --token/WALDUR_ACCESS_TOKEN set. Use
+    /// --profile to save under a name other than "default"
     Login,
-    /// Remove the config file written by `login`
+    /// Remove the credentials saved by `login` for the selected profile
+    /// (--profile, defaulting to "default")
     Logout,
     /// Show the current user, verifying the active credentials
     Whoami,
@@ -82,7 +90,7 @@ fn prompt_line(label: &str) -> anyhow::Result<String> {
     Ok(line.trim().to_string())
 }
 
-async fn login(api_url_flag: Option<String>, token_flag: Option<String>) -> anyhow::Result<()> {
+async fn login(api_url_flag: Option<String>, token_flag: Option<String>, profile: &str) -> anyhow::Result<()> {
     let api_url = match api_url_flag.or_else(|| std::env::var("WALDUR_API_URL").ok()) {
         Some(url) => url,
         None => prompt_line("Waldur API URL")?,
@@ -103,23 +111,29 @@ async fn login(api_url_flag: Option<String>, token_flag: Option<String>) -> anyh
         .await
         .context("login failed -- check the API URL and token")?;
 
-    config::save_stored(&config::StoredCredentials {
-        api_url: api_url.clone(),
-        token,
-    })?;
+    config::save_stored(
+        profile,
+        &config::StoredCredentials {
+            api_url: api_url.clone(),
+            token,
+        },
+    )?;
     let who = me.username.as_deref().unwrap_or("(unknown user)");
     println!(
-        "Logged in to {api_url} as {who}. Credentials saved to {}.",
+        "Logged in to {api_url} as {who} (profile '{profile}'). Credentials saved to {}.",
         config::config_path()?.display()
     );
     Ok(())
 }
 
-fn logout() -> anyhow::Result<()> {
-    if config::delete_stored()? {
-        println!("Logged out; removed {}", config::config_path()?.display());
+fn logout(profile: &str) -> anyhow::Result<()> {
+    if config::delete_stored(profile)? {
+        println!(
+            "Logged out of profile '{profile}'; removed from {}",
+            config::config_path()?.display()
+        );
     } else {
-        println!("Not logged in (no stored credentials found).");
+        println!("Profile '{profile}' is not logged in (no stored credentials found).");
     }
     Ok(())
 }
@@ -145,6 +159,12 @@ fn print_error(err: &anyhow::Error, format: OutputFormat) {
 }
 
 async fn run(cli: Cli) -> anyhow::Result<()> {
+    let profile = cli
+        .profile
+        .clone()
+        .or_else(|| std::env::var("WALDUR_PROFILE").ok())
+        .unwrap_or_else(|| config::DEFAULT_PROFILE.to_string());
+
     if cli.debug {
         // reqwest-tracing records request/response fields (method, url,
         // status, time_elapsed) onto a span rather than firing a discrete
@@ -174,17 +194,17 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
             }
             return Ok(());
         }
-        Commands::Login => return login(cli.api_url, cli.token).await,
-        Commands::Logout => return logout(),
+        Commands::Login => return login(cli.api_url, cli.token, &profile).await,
+        Commands::Logout => return logout(&profile),
         Commands::Whoami => {
-            let config = config::Config::resolve(cli.api_url, cli.token)?;
+            let config = config::Config::resolve(cli.api_url, cli.token, &profile)?;
             let client = build_client(config.api_url, config.token.as_deref());
             return whoami(&client, cli.format).await;
         }
         Commands::Group(cmd) => *cmd,
     };
 
-    let config = config::Config::resolve(cli.api_url, cli.token)?;
+    let config = config::Config::resolve(cli.api_url, cli.token, &profile)?;
     let client = build_client(config.api_url, config.token.as_deref());
     cli::dispatch(&client, command, cli.format).await
 }

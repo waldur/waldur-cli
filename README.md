@@ -85,6 +85,25 @@ credentials.toml` on Linux) with owner-only permissions (`0600` on Unix).
 `waldur-cli whoami` shows who the active credentials (whichever source resolved them)
 actually belong to, without changing anything.
 
+### Multiple deployments (`--profile`)
+
+`--profile`/`WALDUR_PROFILE` selects which named credential set `login`/`logout` and
+regular commands use, for switching between prod/staging/different customer instances
+without re-`login`ing each time:
+
+```bash
+waldur-cli login --profile staging --api-url https://staging.example.com --token ...
+waldur-cli login --profile prod --api-url https://prod.example.com --token ...
+
+waldur-cli team customer list --profile staging
+WALDUR_PROFILE=prod waldur-cli team customer list
+
+waldur-cli logout --profile staging   # only removes that one profile
+```
+
+Omitting `--profile`/`WALDUR_PROFILE` uses the `"default"` profile. Each profile is a
+`[profiles.NAME]` table in the same `credentials.toml`.
+
 ## Debugging (`--debug`)
 
 `--debug` prints one line per HTTP request to stderr (method, URL, status, timing) as it
