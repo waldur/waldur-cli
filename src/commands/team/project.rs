@@ -74,6 +74,13 @@ pub struct ProjectListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
+    /// Only fetch these fields from the server (comma-separated),
+    /// instead of the complete object -- avoids over-fetching.
+    /// Table output always does this already (using its own
+    /// display columns); for json/toon/tsv, which fetch the
+    /// complete object by default, this narrows what they get too.
+    #[arg(long, value_delimiter = ',')]
+    pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct ProjectGetArgs {
@@ -179,6 +186,20 @@ pub async fn run(
             }
             if let Some(v) = &args.user_uuid_with_active_role {
                 query_params.push(("user_uuid_with_active_role".to_string(), v.clone()));
+            }
+            match &args.fields {
+                Some(fields) => {
+                    for f in fields {
+                        query_params.push(("field".to_string(), f.clone()));
+                    }
+                }
+                None => {
+                    if matches!(format, crate ::output::OutputFormat::Table) {
+                        for f in COLUMNS {
+                            query_params.push(("field".to_string(), (*f).to_string()));
+                        }
+                    }
+                }
             }
             let result = crate::pagination::fetch_all(
                     base_url,

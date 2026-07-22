@@ -75,6 +75,16 @@ A mid-fetch failure always surfaces as an error (never silently returns a partia
 it were complete), but reports how much was fetched before it failed, e.g. `fetched 300 of
 1200 item(s) before this failed`.
 
+`--fields uuid,name` restricts what the server sends back to just those fields, avoiding
+over-fetching the complete object for data you don't need. `table` output already does this
+automatically using its own display columns (there's never a reason for it to fetch more than
+what it shows); `json`/`toon`/`tsv` fetch the complete object by default, but `--fields`
+narrows any of them the same way, and always overrides table's default when given explicitly:
+
+```bash
+waldur-cli team customer list --format json --fields uuid,name
+```
+
 `--format tsv` gives tab-separated values, one row per line, no header -- for shell loops
 and `cut`/`awk` pipelines where `--format json` would need an extra `jq` step:
 
