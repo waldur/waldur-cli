@@ -3,6 +3,8 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 4usize] = &["uuid", "username", "full_name", "email"];
+const CREATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_address\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"organization_vat_code\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
+const UPDATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_address\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"organization_vat_code\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
 ///Users
 #[derive(clap::Subcommand, Debug)]
 pub enum UserCommand {
@@ -145,15 +147,61 @@ pub struct UserGetArgs {
     pub uuid: String,
 }
 #[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "user_create_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
 pub struct UserCreateArgs {
+    /// Request body as inline JSON. Use --generate-skeleton for a
+    /// template, or --request-file to read it from a file.
     #[arg(long)]
-    pub request: String,
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead of
+    /// sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 #[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "user_update_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
 pub struct UserUpdateArgs {
-    pub uuid: String,
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for a
+    /// template, or --request-file to read it from a file.
     #[arg(long)]
-    pub request: String,
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead of
+    /// sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 #[derive(clap::Args, Debug)]
 pub struct UserDeleteArgs {
@@ -279,12 +327,18 @@ pub async fn run(
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         UserCommand::Create(args) => {
-            serde_json::from_str::<waldur_client::UserRequest>(&args.request)
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(CREATE_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            serde_json::from_str::<waldur_client::UserRequest>(&body)
                 .with_context(|| {
-                    format!(
-                        "--{} is not valid JSON for the expected request body",
-                        stringify!(request)
-                    )
+                    "the request body is not valid JSON for this resource's request schema"
+                        .to_string()
                 })?;
             let path = "/api/users/".to_string();
             let result = crate::http::call_one(
@@ -292,26 +346,36 @@ pub async fn run(
                     token,
                     reqwest::Method::POST,
                     &path,
-                    Some(&args.request),
+                    Some(&body),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         UserCommand::Update(args) => {
-            serde_json::from_str::<waldur_client::UserRequest>(&args.request)
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(UPDATE_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            serde_json::from_str::<waldur_client::UserRequest>(&body)
                 .with_context(|| {
-                    format!(
-                        "--{} is not valid JSON for the expected request body",
-                        stringify!(request)
-                    )
+                    "the request body is not valid JSON for this resource's request schema"
+                        .to_string()
                 })?;
-            let path = format!("{}{}{}", "/api/users/", args.uuid, "/");
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!("{}{}{}", "/api/users/", uuid, "/");
             let result = crate::http::call_one(
                     base_url,
                     token,
                     reqwest::Method::PUT,
                     &path,
-                    Some(&args.request),
+                    Some(&body),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

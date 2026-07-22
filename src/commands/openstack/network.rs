@@ -3,6 +3,7 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "state", "project_name"];
+const UPDATE_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\"\n}";
 ///OpenStack networks
 #[derive(clap::Subcommand, Debug)]
 pub enum NetworkCommand {
@@ -125,10 +126,33 @@ pub struct NetworkGetArgs {
     pub uuid: String,
 }
 #[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "network_update_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
 pub struct NetworkUpdateArgs {
-    pub uuid: String,
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for a
+    /// template, or --request-file to read it from a file.
     #[arg(long)]
-    pub request: String,
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead of
+    /// sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 #[derive(clap::Args, Debug)]
 pub struct NetworkDeleteArgs {
@@ -251,20 +275,30 @@ pub async fn run(
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         NetworkCommand::Update(args) => {
-            serde_json::from_str::<waldur_client::OpenStackNetworkRequest>(&args.request)
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(UPDATE_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            serde_json::from_str::<waldur_client::OpenStackNetworkRequest>(&body)
                 .with_context(|| {
-                    format!(
-                        "--{} is not valid JSON for the expected request body",
-                        stringify!(request)
-                    )
+                    "the request body is not valid JSON for this resource's request schema"
+                        .to_string()
                 })?;
-            let path = format!("{}{}{}", "/api/openstack-networks/", args.uuid, "/");
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!("{}{}{}", "/api/openstack-networks/", uuid, "/");
             let result = crate::http::call_one(
                     base_url,
                     token,
                     reqwest::Method::PUT,
                     &path,
-                    Some(&args.request),
+                    Some(&body),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

@@ -59,6 +59,27 @@ request body as a `--request` flag containing raw JSON, validated against the sa
 request struct rs-client itself uses — this keeps the CLI simple and avoids needing a flag
 per field of every resource's (sometimes large) request schema.
 
+To discover that schema without leaving the CLI (in the style of AWS's
+`--generate-cli-skeleton`), `create`/`update` take `--generate-skeleton [json|yaml]`, which
+prints a fillable request-body template with every writable field and exits without making a
+request. Required fields carry a typed placeholder; optional ones default to `null`. Fill in
+the fields you want and send the template back with `--request-file` (which reads the body
+from a JSON or YAML file) or inline `--request`:
+
+```bash
+waldur-cli team customer create --generate-skeleton yaml > customer.yaml
+# edit customer.yaml -- set the fields you want, leave the rest
+waldur-cli team customer create --request-file customer.yaml
+```
+
+Any field left `null` is **omitted** from the request, not sent as a literal `null` (Waldur
+rejects an explicit `null` for a non-nullable optional field but accepts it being absent) —
+so a freshly generated template with just the required fields filled in submits cleanly.
+
+`--request`, `--request-file`, and `--generate-skeleton` are mutually exclusive, and exactly
+one is required. `update`'s `<uuid>` is only needed for an actual update, not for
+`--generate-skeleton`.
+
 `list` commands always return the **complete** result set, not just the first page --
 there's no `--page`/`--page-size` flag to opt into it, and no partial-results footgun where
 "list all customers" silently only shows the first 10. Every list endpoint's default

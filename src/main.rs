@@ -4,6 +4,7 @@ mod config;
 mod http;
 mod output;
 mod pagination;
+mod request;
 
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
