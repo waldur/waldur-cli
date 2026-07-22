@@ -54,6 +54,25 @@ request body as a `--request` flag containing raw JSON, validated against the sa
 request struct rs-client itself uses — this keeps the CLI simple and avoids needing a flag
 per field of every resource's (sometimes large) request schema.
 
+## Login (persisted credentials)
+
+For interactive/local use, `waldur-cli login` verifies an API URL + token against
+`GET /api/users/me/` and saves them to a local config file, so you don't have to pass
+`--token`/set `WALDUR_ACCESS_TOKEN` on every invocation:
+
+```bash
+waldur-cli login --api-url https://api.example.com --token your-token
+# or omit either flag to be prompted (the token prompt is masked)
+
+waldur-cli team customer list   # uses the saved credentials
+
+waldur-cli logout               # removes the saved file
+```
+
+Precedence is `--api-url`/`--token` flags > `WALDUR_API_URL`/`WALDUR_ACCESS_TOKEN` env vars >
+saved login. The file lives at the platform config dir (e.g. `~/.config/waldur-cli/
+credentials.toml` on Linux) with owner-only permissions (`0600` on Unix).
+
 ## Shell completions
 
 `waldur-cli completions <shell>` prints a completion script for `bash`, `zsh`, `fish`,
