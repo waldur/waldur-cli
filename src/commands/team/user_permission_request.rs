@@ -20,11 +20,11 @@ pub struct UserPermissionRequestListArgs {
     #[arg(long)]
     pub invitation: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub scope: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct UserPermissionRequestGetArgs {
@@ -32,21 +32,32 @@ pub struct UserPermissionRequestGetArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: UserPermissionRequestCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         UserPermissionRequestCommand::List(args) => {
-            let result = client
-                .user_permission_requests_list(
-                    args.created_by.as_deref(),
-                    args.customer_uuid.as_deref(),
-                    args.invitation.as_deref(),
-                    None,
-                    args.page,
-                    args.page_size,
-                    args.scope.as_deref(),
-                    None,
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.created_by {
+                query_params.push(("created_by".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_uuid {
+                query_params.push(("customer_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.invitation {
+                query_params.push(("invitation".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.scope {
+                query_params.push(("scope".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/user-permission-requests/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

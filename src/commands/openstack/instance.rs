@@ -45,10 +45,6 @@ pub struct InstanceListArgs {
     #[arg(long)]
     pub o: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub project: Option<String>,
     #[arg(long)]
     pub project_name: Option<String>,
@@ -66,6 +62,10 @@ pub struct InstanceListArgs {
     pub tenant: Option<String>,
     #[arg(long)]
     pub tenant_uuid: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceGetArgs {
@@ -79,52 +79,86 @@ pub struct InstanceUpdateArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: InstanceCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         InstanceCommand::List(args) => {
-            let result = client
-                .openstack_instances_list(
-                    args.attach_volume_uuid.as_deref(),
-                    args.availability_zone_name.as_deref(),
-                    args.backend_id.as_deref(),
-                    args.can_manage,
-                    args.customer.as_deref(),
-                    args.customer_abbreviation.as_deref(),
-                    args.customer_name.as_deref(),
-                    args.customer_native_name.as_deref(),
-                    args.customer_uuid.as_deref(),
-                    args.description.as_deref(),
-                    args.external_ip.as_deref(),
-                    None,
-                    args.name.as_deref(),
-                    args.name_exact.as_deref(),
-                    args
-                        .o
-                        .as_deref()
-                        .map(|s| serde_json::from_str::<
-                            waldur_client::OpenStackInstanceOEnum,
-                        >(s))
-                        .transpose()
-                        .with_context(|| {
-                            format!(
-                                "--{} is not valid JSON for the expected request body",
-                                stringify!(o)
-                            )
-                        })?,
-                    args.page,
-                    args.page_size,
-                    args.project.as_deref(),
-                    args.project_name.as_deref(),
-                    args.project_uuid.as_deref(),
-                    args.query.as_deref(),
-                    args.runtime_state.as_deref(),
-                    args.service_settings_name.as_deref(),
-                    args.service_settings_uuid.as_deref(),
-                    None,
-                    args.tenant.as_deref(),
-                    args.tenant_uuid.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.attach_volume_uuid {
+                query_params.push(("attach_volume_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.availability_zone_name {
+                query_params.push(("availability_zone_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.backend_id {
+                query_params.push(("backend_id".to_string(), v.clone()));
+            }
+            if let Some(v) = args.can_manage {
+                query_params.push(("can_manage".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.customer {
+                query_params.push(("customer".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_abbreviation {
+                query_params.push(("customer_abbreviation".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_name {
+                query_params.push(("customer_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_native_name {
+                query_params.push(("customer_native_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_uuid {
+                query_params.push(("customer_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.description {
+                query_params.push(("description".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.external_ip {
+                query_params.push(("external_ip".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.name {
+                query_params.push(("name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.name_exact {
+                query_params.push(("name_exact".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project {
+                query_params.push(("project".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project_name {
+                query_params.push(("project_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project_uuid {
+                query_params.push(("project_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.query {
+                query_params.push(("query".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.runtime_state {
+                query_params.push(("runtime_state".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.service_settings_name {
+                query_params.push(("service_settings_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.service_settings_uuid {
+                query_params.push(("service_settings_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.tenant {
+                query_params.push(("tenant".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.tenant_uuid {
+                query_params.push(("tenant_uuid".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/openstack-instances/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

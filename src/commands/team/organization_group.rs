@@ -27,11 +27,11 @@ pub struct OrganizationGroupListArgs {
     #[arg(long)]
     pub o: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub parent: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrganizationGroupGetArgs {
@@ -54,19 +54,32 @@ pub struct OrganizationGroupDeleteArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: OrganizationGroupCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         OrganizationGroupCommand::List(args) => {
-            let result = client
-                .organization_groups_list(
-                    args.name.as_deref(),
-                    args.name_exact.as_deref(),
-                    args.o.as_deref(),
-                    args.page,
-                    args.page_size,
-                    args.parent.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.name {
+                query_params.push(("name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.name_exact {
+                query_params.push(("name_exact".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.o {
+                query_params.push(("o".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.parent {
+                query_params.push(("parent".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/organization-groups/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

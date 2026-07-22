@@ -35,11 +35,11 @@ pub struct RoleListArgs {
     #[arg(long)]
     pub name: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub query: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct RoleGetArgs {
@@ -62,25 +62,44 @@ pub struct RoleDeleteArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: RoleCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         RoleCommand::List(args) => {
-            let result = client
-                .roles_list(
-                    args.available_for_customer.as_deref(),
-                    args.content_type.as_deref(),
-                    args.description.as_deref(),
-                    None,
-                    args.include_concealed,
-                    args.is_active,
-                    args.is_system_role,
-                    args.name.as_deref(),
-                    None,
-                    args.page,
-                    args.page_size,
-                    args.query.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.available_for_customer {
+                query_params.push(("available_for_customer".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.content_type {
+                query_params.push(("content_type".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.description {
+                query_params.push(("description".to_string(), v.clone()));
+            }
+            if let Some(v) = args.include_concealed {
+                query_params.push(("include_concealed".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.is_active {
+                query_params.push(("is_active".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.is_system_role {
+                query_params.push(("is_system_role".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.name {
+                query_params.push(("name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.query {
+                query_params.push(("query".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/roles/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

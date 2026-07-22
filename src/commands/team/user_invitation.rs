@@ -29,10 +29,6 @@ pub struct UserInvitationListArgs {
     #[arg(long)]
     pub email_exact: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub role_name: Option<String>,
     #[arg(long)]
     pub role_uuid: Option<String>,
@@ -44,6 +40,10 @@ pub struct UserInvitationListArgs {
     pub scope_name: Option<String>,
     #[arg(long)]
     pub scope_type: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct UserInvitationGetArgs {
@@ -66,27 +66,50 @@ pub struct UserInvitationDeleteArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: UserInvitationCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         UserInvitationCommand::List(args) => {
-            let result = client
-                .user_invitations_list(
-                    args.civil_number.as_deref(),
-                    args.customer_uuid.as_deref(),
-                    args.email.as_deref(),
-                    args.email_exact.as_deref(),
-                    None,
-                    args.page,
-                    args.page_size,
-                    args.role_name.as_deref(),
-                    args.role_uuid.as_deref(),
-                    args.scope.as_deref(),
-                    args.scope_description.as_deref(),
-                    args.scope_name.as_deref(),
-                    args.scope_type.as_deref(),
-                    None,
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.civil_number {
+                query_params.push(("civil_number".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_uuid {
+                query_params.push(("customer_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.email {
+                query_params.push(("email".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.email_exact {
+                query_params.push(("email_exact".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.role_name {
+                query_params.push(("role_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.role_uuid {
+                query_params.push(("role_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.scope {
+                query_params.push(("scope".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.scope_description {
+                query_params.push(("scope_description".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.scope_name {
+                query_params.push(("scope_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.scope_type {
+                query_params.push(("scope_type".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/user-invitations/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

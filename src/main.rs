@@ -2,6 +2,7 @@ mod cli;
 mod commands;
 mod config;
 mod output;
+mod pagination;
 
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
@@ -11,8 +12,8 @@ use waldur_client::HttpClient;
 
 /// Scriptable CLI for Waldur MasterMind, covering OpenStack resource
 /// management and team/organization management. Generated command surface
-/// (see waldur/waldur-cli-generator); this file and config.rs/output.rs are
-/// hand-written and not touched by generation.
+/// (see waldur/waldur-cli-generator); this file and config.rs/output.rs/
+/// pagination.rs are hand-written and not touched by generation.
 #[derive(Parser, Debug)]
 #[command(name = "waldur-cli", version, about)]
 struct Cli {
@@ -215,8 +216,8 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
     };
 
     let config = config::Config::resolve(cli.api_url, cli.token, &profile)?;
-    let client = build_client(config.api_url, config.token.as_deref());
-    cli::dispatch(&client, command, cli.format).await
+    let client = build_client(config.api_url.clone(), config.token.as_deref());
+    cli::dispatch(&client, &config.api_url, config.token.as_deref(), command, cli.format).await
 }
 
 #[tokio::main(flavor = "current_thread")]

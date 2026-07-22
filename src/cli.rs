@@ -74,6 +74,8 @@ pub enum TeamCommand {
 }
 pub async fn dispatch(
     client: &waldur_client::HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: GroupCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -81,26 +83,73 @@ pub async fn dispatch(
         GroupCommand::Openstack(cmd) => {
             match cmd {
                 OpenstackCommand::Tenant(cmd) => {
-                    crate::commands::openstack::tenant::run(client, cmd, format).await
+                    crate::commands::openstack::tenant::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 OpenstackCommand::Instance(cmd) => {
-                    crate::commands::openstack::instance::run(client, cmd, format).await
+                    crate::commands::openstack::instance::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 OpenstackCommand::Volume(cmd) => {
-                    crate::commands::openstack::volume::run(client, cmd, format).await
+                    crate::commands::openstack::volume::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 OpenstackCommand::Network(cmd) => {
-                    crate::commands::openstack::network::run(client, cmd, format).await
+                    crate::commands::openstack::network::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 OpenstackCommand::Subnet(cmd) => {
-                    crate::commands::openstack::subnet::run(client, cmd, format).await
+                    crate::commands::openstack::subnet::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 OpenstackCommand::SecurityGroup(cmd) => {
-                    crate::commands::openstack::security_group::run(client, cmd, format)
+                    crate::commands::openstack::security_group::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
                         .await
                 }
                 OpenstackCommand::FloatingIp(cmd) => {
-                    crate::commands::openstack::floating_ip::run(client, cmd, format)
+                    crate::commands::openstack::floating_ip::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
                         .await
                 }
             }
@@ -108,28 +157,70 @@ pub async fn dispatch(
         GroupCommand::Team(cmd) => {
             match cmd {
                 TeamCommand::Customer(cmd) => {
-                    crate::commands::team::customer::run(client, cmd, format).await
+                    crate::commands::team::customer::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 TeamCommand::Project(cmd) => {
-                    crate::commands::team::project::run(client, cmd, format).await
+                    crate::commands::team::project::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 TeamCommand::User(cmd) => {
-                    crate::commands::team::user::run(client, cmd, format).await
+                    crate::commands::team::user::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 TeamCommand::Role(cmd) => {
-                    crate::commands::team::role::run(client, cmd, format).await
+                    crate::commands::team::role::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
+                        .await
                 }
                 TeamCommand::UserInvitation(cmd) => {
-                    crate::commands::team::user_invitation::run(client, cmd, format)
+                    crate::commands::team::user_invitation::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
                         .await
                 }
                 TeamCommand::OrganizationGroup(cmd) => {
-                    crate::commands::team::organization_group::run(client, cmd, format)
+                    crate::commands::team::organization_group::run(
+                            client,
+                            base_url,
+                            token,
+                            cmd,
+                            format,
+                        )
                         .await
                 }
                 TeamCommand::CustomerPermissionsReview(cmd) => {
                     crate::commands::team::customer_permissions_review::run(
                             client,
+                            base_url,
+                            token,
                             cmd,
                             format,
                         )
@@ -138,6 +229,8 @@ pub async fn dispatch(
                 TeamCommand::ProjectPermissionsReview(cmd) => {
                     crate::commands::team::project_permissions_review::run(
                             client,
+                            base_url,
+                            token,
                             cmd,
                             format,
                         )
@@ -146,6 +239,8 @@ pub async fn dispatch(
                 TeamCommand::UserPermissionRequest(cmd) => {
                     crate::commands::team::user_permission_request::run(
                             client,
+                            base_url,
+                            token,
                             cmd,
                             format,
                         )

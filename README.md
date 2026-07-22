@@ -54,6 +54,27 @@ request body as a `--request` flag containing raw JSON, validated against the sa
 request struct rs-client itself uses — this keeps the CLI simple and avoids needing a flag
 per field of every resource's (sometimes large) request schema.
 
+`list` commands always return the **complete** result set, not just the first page --
+there's no `--page`/`--page-size` flag to opt into it, and no partial-results footgun where
+"list all customers" silently only shows the first 10. Every list endpoint's default
+pagination class (`LinkHeaderPagination`) reports the total via an `X-Result-Count` response
+header; `list` requests pages of up to 300 at a time (Waldur's max) and keeps going until it
+has everything, merging the result into one array before rendering in whichever `--format`
+you asked for.
+
+`--limit N` caps that at N items instead, for a resource with more results than you actually
+want -- both to bound how long a huge fetch takes, and to bound the damage if a page fails
+partway through a very long one (a smaller `--limit` means fewer requests, so a failure on a
+page you didn't need is never hit in the first place):
+
+```bash
+waldur-cli team customer list --limit 50
+```
+
+A mid-fetch failure always surfaces as an error (never silently returns a partial list as if
+it were complete), but reports how much was fetched before it failed, e.g. `fetched 300 of
+1200 item(s) before this failed`.
+
 `--format tsv` gives tab-separated values, one row per line, no header -- for shell loops
 and `cut`/`awk` pipelines where `--format json` would need an extra `jq` step:
 

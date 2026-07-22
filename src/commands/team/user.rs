@@ -51,10 +51,6 @@ pub struct UserListArgs {
     #[arg(long)]
     pub organization_roles: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub phone_number: Option<String>,
     #[arg(long)]
     pub project_roles: Option<String>,
@@ -70,6 +66,10 @@ pub struct UserListArgs {
     pub username: Option<String>,
     #[arg(long)]
     pub username_list: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct UserGetArgs {
@@ -92,40 +92,89 @@ pub struct UserDeleteArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: UserCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         UserCommand::List(args) => {
-            let result = client
-                .users_list(
-                    args.agreement_date.as_deref(),
-                    args.civil_number.as_deref(),
-                    args.customer_uuid.as_deref(),
-                    args.date_joined.as_deref(),
-                    args.description.as_deref(),
-                    args.email.as_deref(),
-                    None,
-                    args.full_name.as_deref(),
-                    args.is_active,
-                    args.is_staff,
-                    args.is_support,
-                    args.job_title.as_deref(),
-                    args.modified.as_deref(),
-                    args.native_name.as_deref(),
-                    None,
-                    args.organization.as_deref(),
-                    args.organization_roles.as_deref(),
-                    args.page,
-                    args.page_size,
-                    args.phone_number.as_deref(),
-                    args.project_roles.as_deref(),
-                    args.project_uuid.as_deref(),
-                    args.query.as_deref(),
-                    args.registration_method.as_deref(),
-                    args.user_keyword.as_deref(),
-                    args.username.as_deref(),
-                    args.username_list.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.agreement_date {
+                query_params.push(("agreement_date".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.civil_number {
+                query_params.push(("civil_number".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_uuid {
+                query_params.push(("customer_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.date_joined {
+                query_params.push(("date_joined".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.description {
+                query_params.push(("description".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.email {
+                query_params.push(("email".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.full_name {
+                query_params.push(("full_name".to_string(), v.clone()));
+            }
+            if let Some(v) = args.is_active {
+                query_params.push(("is_active".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.is_staff {
+                query_params.push(("is_staff".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.is_support {
+                query_params.push(("is_support".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.job_title {
+                query_params.push(("job_title".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.modified {
+                query_params.push(("modified".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.native_name {
+                query_params.push(("native_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.organization {
+                query_params.push(("organization".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.organization_roles {
+                query_params.push(("organization_roles".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.phone_number {
+                query_params.push(("phone_number".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project_roles {
+                query_params.push(("project_roles".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project_uuid {
+                query_params.push(("project_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.query {
+                query_params.push(("query".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.registration_method {
+                query_params.push(("registration_method".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.user_keyword {
+                query_params.push(("user_keyword".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.username {
+                query_params.push(("username".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.username_list {
+                query_params.push(("username_list".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/users/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

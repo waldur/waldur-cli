@@ -20,11 +20,11 @@ pub struct CustomerPermissionsReviewListArgs {
     #[arg(long)]
     pub is_pending: Option<bool>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub reviewer_uuid: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct CustomerPermissionsReviewGetArgs {
@@ -32,20 +32,32 @@ pub struct CustomerPermissionsReviewGetArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: CustomerPermissionsReviewCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         CustomerPermissionsReviewCommand::List(args) => {
-            let result = client
-                .customer_permissions_reviews_list(
-                    args.closed.as_deref(),
-                    args.customer_uuid.as_deref(),
-                    args.is_pending,
-                    None,
-                    args.page,
-                    args.page_size,
-                    args.reviewer_uuid.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.closed {
+                query_params.push(("closed".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_uuid {
+                query_params.push(("customer_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = args.is_pending {
+                query_params.push(("is_pending".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.reviewer_uuid {
+                query_params.push(("reviewer_uuid".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/customer-permissions-reviews/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

@@ -53,10 +53,6 @@ pub struct CustomerListArgs {
     #[arg(long)]
     pub owned_by_current_user: Option<bool>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub query: Option<String>,
     #[arg(long)]
     pub registration_code: Option<String>,
@@ -66,6 +62,10 @@ pub struct CustomerListArgs {
     pub slug: Option<String>,
     #[arg(long)]
     pub user_uuid: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct CustomerGetArgs {
@@ -88,39 +88,88 @@ pub struct CustomerDeleteArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: CustomerCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         CustomerCommand::List(args) => {
-            let result = client
-                .customers_list(
-                    args.abbreviation.as_deref(),
-                    args.accounting_is_running,
-                    args.agreement_number.as_deref(),
-                    args.archived,
-                    args.backend_id.as_deref(),
-                    args.contact_details.as_deref(),
-                    args.current_user_has_project_create_permission,
-                    None,
-                    None,
-                    args.has_resources.as_deref(),
-                    args.is_call_managing_organization,
-                    args.is_service_provider,
-                    args.name.as_deref(),
-                    args.name_exact.as_deref(),
-                    args.native_name.as_deref(),
-                    args.o.as_deref(),
-                    args.organization_group_name.as_deref(),
-                    None,
-                    args.owned_by_current_user,
-                    args.page,
-                    args.page_size,
-                    args.query.as_deref(),
-                    args.registration_code.as_deref(),
-                    args.service_provider_uuid.as_deref(),
-                    args.slug.as_deref(),
-                    args.user_uuid.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.abbreviation {
+                query_params.push(("abbreviation".to_string(), v.clone()));
+            }
+            if let Some(v) = args.accounting_is_running {
+                query_params.push(("accounting_is_running".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.agreement_number {
+                query_params.push(("agreement_number".to_string(), v.clone()));
+            }
+            if let Some(v) = args.archived {
+                query_params.push(("archived".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.backend_id {
+                query_params.push(("backend_id".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.contact_details {
+                query_params.push(("contact_details".to_string(), v.clone()));
+            }
+            if let Some(v) = args.current_user_has_project_create_permission {
+                query_params
+                    .push((
+                        "current_user_has_project_create_permission".to_string(),
+                        v.to_string(),
+                    ));
+            }
+            if let Some(v) = &args.has_resources {
+                query_params.push(("has_resources".to_string(), v.clone()));
+            }
+            if let Some(v) = args.is_call_managing_organization {
+                query_params
+                    .push(("is_call_managing_organization".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.is_service_provider {
+                query_params.push(("is_service_provider".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.name {
+                query_params.push(("name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.name_exact {
+                query_params.push(("name_exact".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.native_name {
+                query_params.push(("native_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.o {
+                query_params.push(("o".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.organization_group_name {
+                query_params.push(("organization_group_name".to_string(), v.clone()));
+            }
+            if let Some(v) = args.owned_by_current_user {
+                query_params.push(("owned_by_current_user".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.query {
+                query_params.push(("query".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.registration_code {
+                query_params.push(("registration_code".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.service_provider_uuid {
+                query_params.push(("service_provider_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.slug {
+                query_params.push(("slug".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.user_uuid {
+                query_params.push(("user_uuid".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/customers/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

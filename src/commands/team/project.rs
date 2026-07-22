@@ -59,10 +59,6 @@ pub struct ProjectListArgs {
     #[arg(long)]
     pub name_exact: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub query: Option<String>,
     #[arg(long)]
     pub science_domain_uuid: Option<String>,
@@ -74,6 +70,10 @@ pub struct ProjectListArgs {
     pub user_uuid: Option<String>,
     #[arg(long)]
     pub user_uuid_with_active_role: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct ProjectGetArgs {
@@ -96,45 +96,96 @@ pub struct ProjectDeleteArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: ProjectCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         ProjectCommand::List(args) => {
-            let result = client
-                .projects_list(
-                    args.accounting_is_running,
-                    args.affiliation_name.as_deref(),
-                    None,
-                    args.backend_id.as_deref(),
-                    args.can_admin,
-                    args.can_manage,
-                    args.conceal_finished_projects,
-                    args.created.as_deref(),
-                    args.created_before.as_deref(),
-                    None,
-                    None,
-                    args.customer_abbreviation.as_deref(),
-                    args.customer_name.as_deref(),
-                    args.customer_native_name.as_deref(),
-                    args.description.as_deref(),
-                    None,
-                    args.has_affiliation,
-                    args.include_terminated,
-                    args.is_removed,
-                    args.modified.as_deref(),
-                    args.modified_before.as_deref(),
-                    args.name.as_deref(),
-                    args.name_exact.as_deref(),
-                    None,
-                    args.page,
-                    args.page_size,
-                    args.query.as_deref(),
-                    args.science_domain_uuid.as_deref(),
-                    args.science_sub_domain_uuid.as_deref(),
-                    args.slug.as_deref(),
-                    args.user_uuid.as_deref(),
-                    args.user_uuid_with_active_role.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = args.accounting_is_running {
+                query_params.push(("accounting_is_running".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.affiliation_name {
+                query_params.push(("affiliation_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.backend_id {
+                query_params.push(("backend_id".to_string(), v.clone()));
+            }
+            if let Some(v) = args.can_admin {
+                query_params.push(("can_admin".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.can_manage {
+                query_params.push(("can_manage".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.conceal_finished_projects {
+                query_params
+                    .push(("conceal_finished_projects".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.created {
+                query_params.push(("created".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.created_before {
+                query_params.push(("created_before".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_abbreviation {
+                query_params.push(("customer_abbreviation".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_name {
+                query_params.push(("customer_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_native_name {
+                query_params.push(("customer_native_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.description {
+                query_params.push(("description".to_string(), v.clone()));
+            }
+            if let Some(v) = args.has_affiliation {
+                query_params.push(("has_affiliation".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.include_terminated {
+                query_params.push(("include_terminated".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.is_removed {
+                query_params.push(("is_removed".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.modified {
+                query_params.push(("modified".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.modified_before {
+                query_params.push(("modified_before".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.name {
+                query_params.push(("name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.name_exact {
+                query_params.push(("name_exact".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.query {
+                query_params.push(("query".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.science_domain_uuid {
+                query_params.push(("science_domain_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.science_sub_domain_uuid {
+                query_params.push(("science_sub_domain_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.slug {
+                query_params.push(("slug".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.user_uuid {
+                query_params.push(("user_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.user_uuid_with_active_role {
+                query_params.push(("user_uuid_with_active_role".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/projects/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

@@ -51,10 +51,6 @@ pub struct SubnetListArgs {
     #[arg(long)]
     pub network_uuid: Option<String>,
     #[arg(long)]
-    pub page: Option<i64>,
-    #[arg(long)]
-    pub page_size: Option<i64>,
-    #[arg(long)]
     pub project: Option<String>,
     #[arg(long)]
     pub project_name: Option<String>,
@@ -70,6 +66,10 @@ pub struct SubnetListArgs {
     pub tenant: Option<String>,
     #[arg(long)]
     pub tenant_uuid: Option<String>,
+    /// Stop after this many items (across however many pages that
+    /// takes), instead of fetching the complete result
+    #[arg(long)]
+    pub limit: Option<i64>,
 }
 #[derive(clap::Args, Debug)]
 pub struct SubnetGetArgs {
@@ -87,41 +87,92 @@ pub struct SubnetDeleteArgs {
 }
 pub async fn run(
     client: &HttpClient,
+    base_url: &str,
+    token: Option<&str>,
     command: SubnetCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
         SubnetCommand::List(args) => {
-            let result = client
-                .openstack_subnets_list(
-                    args.backend_id.as_deref(),
-                    args.can_manage,
-                    args.customer.as_deref(),
-                    args.customer_abbreviation.as_deref(),
-                    args.customer_name.as_deref(),
-                    args.customer_native_name.as_deref(),
-                    args.customer_uuid.as_deref(),
-                    args.description.as_deref(),
-                    args.direct_only,
-                    args.enable_dhcp,
-                    args.external_ip.as_deref(),
-                    None,
-                    args.ip_version,
-                    args.name.as_deref(),
-                    args.name_exact.as_deref(),
-                    args.network.as_deref(),
-                    args.network_uuid.as_deref(),
-                    args.page,
-                    args.page_size,
-                    args.project.as_deref(),
-                    args.project_name.as_deref(),
-                    args.project_uuid.as_deref(),
-                    args.rbac_only,
-                    args.service_settings_name.as_deref(),
-                    args.service_settings_uuid.as_deref(),
-                    None,
-                    args.tenant.as_deref(),
-                    args.tenant_uuid.as_deref(),
+            let mut query_params: Vec<(String, String)> = Vec::new();
+            if let Some(v) = &args.backend_id {
+                query_params.push(("backend_id".to_string(), v.clone()));
+            }
+            if let Some(v) = args.can_manage {
+                query_params.push(("can_manage".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.customer {
+                query_params.push(("customer".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_abbreviation {
+                query_params.push(("customer_abbreviation".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_name {
+                query_params.push(("customer_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_native_name {
+                query_params.push(("customer_native_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.customer_uuid {
+                query_params.push(("customer_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.description {
+                query_params.push(("description".to_string(), v.clone()));
+            }
+            if let Some(v) = args.direct_only {
+                query_params.push(("direct_only".to_string(), v.to_string()));
+            }
+            if let Some(v) = args.enable_dhcp {
+                query_params.push(("enable_dhcp".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.external_ip {
+                query_params.push(("external_ip".to_string(), v.clone()));
+            }
+            if let Some(v) = args.ip_version {
+                query_params.push(("ip_version".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.name {
+                query_params.push(("name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.name_exact {
+                query_params.push(("name_exact".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.network {
+                query_params.push(("network".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.network_uuid {
+                query_params.push(("network_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project {
+                query_params.push(("project".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project_name {
+                query_params.push(("project_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.project_uuid {
+                query_params.push(("project_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = args.rbac_only {
+                query_params.push(("rbac_only".to_string(), v.to_string()));
+            }
+            if let Some(v) = &args.service_settings_name {
+                query_params.push(("service_settings_name".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.service_settings_uuid {
+                query_params.push(("service_settings_uuid".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.tenant {
+                query_params.push(("tenant".to_string(), v.clone()));
+            }
+            if let Some(v) = &args.tenant_uuid {
+                query_params.push(("tenant_uuid".to_string(), v.clone()));
+            }
+            let result = crate::pagination::fetch_all(
+                    base_url,
+                    token,
+                    "/api/openstack-subnets/",
+                    &query_params,
+                    args.limit,
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
