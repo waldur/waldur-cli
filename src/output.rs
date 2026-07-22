@@ -13,10 +13,16 @@ pub enum OutputFormat {
     /// Tab-separated values, one row per line, no header -- for shell loops
     /// (`while IFS=$'\t' read -r ...`) and `cut`/`awk` pipelines.
     Tsv,
+    /// TOON (Token-Oriented Object Notation, https://toonformat.dev):
+    /// full/lossless like json, but far fewer tokens for uniform arrays of
+    /// objects -- field names are declared once in a header instead of
+    /// repeated per row. Unlike table/tsv this is NOT limited to `columns`;
+    /// it serializes the complete result.
+    Toon,
 }
 
 /// Print a single object or a list of objects, either as a table (using
-/// `columns` to pick and order fields) or as pretty JSON.
+/// `columns` to pick and order fields), pretty JSON, or TOON.
 ///
 /// Works generically on anything `Serialize`: rs-client's list methods
 /// return `Vec<T>` (aliased), retrieve/create/update return a bare `T`. We
@@ -29,6 +35,10 @@ pub fn print_result<T: Serialize>(value: &T, columns: &[&str], format: OutputFor
         OutputFormat::Json => println!("{}", serde_json::to_string_pretty(&json)?),
         OutputFormat::Table => print_table(&json, columns),
         OutputFormat::Tsv => print_tsv(&json, columns),
+        // Full result, not just `columns` -- table/tsv are deliberately
+        // curated for human/shell scanning, but toon (like json) is meant
+        // to be a complete, lossless representation an agent can rely on.
+        OutputFormat::Toon => println!("{}", serde_toon::to_string(&json)?),
     }
     Ok(())
 }

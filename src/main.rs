@@ -152,6 +152,16 @@ fn print_error(err: &anyhow::Error, format: OutputFormat) {
         OutputFormat::Json => {
             eprintln!("{}", serde_json::json!({ "error": format!("{err:#}") }))
         }
+        // Toon is a full/lossless structured format like json (not a
+        // curated-columns one like table/tsv), so it gets the same
+        // structured error object, just toon-encoded.
+        OutputFormat::Toon => {
+            let value = serde_json::json!({ "error": format!("{err:#}") });
+            match serde_toon::to_string(&value) {
+                Ok(toon) => eprintln!("{toon}"),
+                Err(_) => eprintln!("Error: {err:#}"),
+            }
+        }
         // Tsv has no structured-object concept the way json does (flat rows
         // only), so it gets the same plain-text error table gets.
         OutputFormat::Table | OutputFormat::Tsv => eprintln!("Error: {err:#}"),

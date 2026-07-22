@@ -63,6 +63,20 @@ waldur-cli team customer list --format tsv | while IFS=$'\t' read -r uuid name a
 done
 ```
 
+`--format toon` gives [TOON](https://toonformat.dev) (Token-Oriented Object Notation) --
+full/lossless like `json`, but far fewer tokens: field names for a uniform array of objects
+(what every `list` command returns) are declared once in a header instead of repeated per
+row. Meant for feeding results into an LLM context, not scripting -- unlike `table`/`tsv` it
+is **not** limited to each command's curated columns, it serializes the complete result:
+
+```bash
+waldur-cli team customer list --format toon
+# [3]{blocked,name,uuid}:
+#   false,Acme Corp,"11111111-1111-1111-1111-111111111111"
+#   true,Beta LLC,"22222222-2222-2222-2222-222222222222"
+#   false,Gamma Inc,"33333333-3333-3333-3333-333333333333"
+```
+
 ## Login (persisted credentials)
 
 For interactive/local use, `waldur-cli login` verifies an API URL + token against
@@ -116,10 +130,10 @@ waldur-cli team customer list --debug 1>/dev/null
 
 ## Errors
 
-Failures print `Error: <message>` to stderr under `--format table` (the default), or a
-single-line `{"error": "<message>"}` JSON object to stderr under `--format json` — so a
-script/agent parsing `--format json` output doesn't need a separate error-handling path.
-stdout only ever carries successful output either way.
+Failures print `Error: <message>` to stderr under `--format table`/`tsv` (the default), or a
+structured `{"error": "<message>"}` object to stderr under `--format json`/`toon` (json- or
+toon-encoded to match) — so a script/agent parsing structured output doesn't need a separate
+error-handling path. stdout only ever carries successful output either way.
 
 ## Shell completions
 

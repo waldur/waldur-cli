@@ -142,6 +142,12 @@ pub async fn run(
                 crate::output::OutputFormat::Tsv => {
                     println!("true\t{}", args.uuid);
                 }
+                crate::output::OutputFormat::Toon => {
+                    println!(
+                        "{}", serde_toon::to_string(& serde_json::json!({ "deleted" :
+                        true, "uuid" : args.uuid }),) ?
+                    );
+                }
             }
         }
     }
