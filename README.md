@@ -54,6 +54,15 @@ request body as a `--request` flag containing raw JSON, validated against the sa
 request struct rs-client itself uses — this keeps the CLI simple and avoids needing a flag
 per field of every resource's (sometimes large) request schema.
 
+`--format tsv` gives tab-separated values, one row per line, no header -- for shell loops
+and `cut`/`awk` pipelines where `--format json` would need an extra `jq` step:
+
+```bash
+waldur-cli team customer list --format tsv | while IFS=$'\t' read -r uuid name abbr state; do
+    echo "$name ($uuid)"
+done
+```
+
 ## Login (persisted credentials)
 
 For interactive/local use, `waldur-cli login` verifies an API URL + token against

@@ -119,6 +119,9 @@ pub async fn run(
                 crate::output::OutputFormat::Table => {
                     println!("Deleted {}", args.uuid);
                 }
+                crate::output::OutputFormat::Tsv => {
+                    println!("true\t{}", args.uuid);
+                }
             }
         }
     }

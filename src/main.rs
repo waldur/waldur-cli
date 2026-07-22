@@ -138,7 +138,9 @@ fn print_error(err: &anyhow::Error, format: OutputFormat) {
         OutputFormat::Json => {
             eprintln!("{}", serde_json::json!({ "error": format!("{err:#}") }))
         }
-        OutputFormat::Table => eprintln!("Error: {err:#}"),
+        // Tsv has no structured-object concept the way json does (flat rows
+        // only), so it gets the same plain-text error table gets.
+        OutputFormat::Table | OutputFormat::Tsv => eprintln!("Error: {err:#}"),
     }
 }
 
