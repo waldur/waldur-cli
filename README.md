@@ -73,6 +73,26 @@ Precedence is `--api-url`/`--token` flags > `WALDUR_API_URL`/`WALDUR_ACCESS_TOKE
 saved login. The file lives at the platform config dir (e.g. `~/.config/waldur-cli/
 credentials.toml` on Linux) with owner-only permissions (`0600` on Unix).
 
+`waldur-cli whoami` shows who the active credentials (whichever source resolved them)
+actually belong to, without changing anything.
+
+## Debugging (`--debug`)
+
+`--debug` prints one line per HTTP request to stderr (method, URL, status, timing) as it
+happens, regardless of `--format`:
+
+```bash
+waldur-cli team customer list --debug 1>/dev/null
+# 2026-07-22T03:03:35Z  INFO HTTP request{http.request.method=GET ... http.response.status_code=200}: close time.busy=299µs time.idle=460µs
+```
+
+## Errors
+
+Failures print `Error: <message>` to stderr under `--format table` (the default), or a
+single-line `{"error": "<message>"}` JSON object to stderr under `--format json` — so a
+script/agent parsing `--format json` output doesn't need a separate error-handling path.
+stdout only ever carries successful output either way.
+
 ## Shell completions
 
 `waldur-cli completions <shell>` prints a completion script for `bash`, `zsh`, `fish`,

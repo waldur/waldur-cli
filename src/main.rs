@@ -30,6 +30,10 @@ struct Cli {
     /// Output format.
     #[arg(long, global = true, value_enum, default_value = "table")]
     format: OutputFormat,
+
+    /// Print request/response tracing (method, URL, status, timing) to stderr
+    #[arg(long, global = true)]
+    debug: bool,
 }
 
 // Flattens the generated `cli::GroupCommand` variants (openstack/team) in
@@ -49,7 +53,13 @@ enum Commands {
     Login,
     /// Remove the config file written by `login`
     Logout,
+    /// Show the current user, verifying the active credentials
+    Whoami,
 }
+
+/// Same column set `team user get` uses -- whoami is conceptually that,
+/// scoped to the caller's own account.
+const WHOAMI_COLUMNS: &[&str] = &["uuid", "username", "full_name", "email"];
 
 /// Waldur's DRF TokenAuthentication expects the literal "Token <key>" format
 /// (not "Bearer <key>" -- that's only for the separate OIDC/PAT auth
@@ -114,9 +124,36 @@ fn logout() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+async fn whoami(client: &HttpClient, format: OutputFormat) -> anyhow::Result<()> {
+    let me = client.users_me_retrieve(None).await?;
+    output::print_result(&me, WHOAMI_COLUMNS, format)
+}
+
+/// Prints in the same shape success output uses (plain text for `table`,
+/// JSON for `format json`), so a script/agent parsing `--format json` output
+/// doesn't also need a separate path for failures. Always goes to stderr,
+/// regardless of format, so stdout stays clean on the success path only.
+fn print_error(err: &anyhow::Error, format: OutputFormat) {
+    match format {
+        OutputFormat::Json => {
+            eprintln!("{}", serde_json::json!({ "error": format!("{err:#}") }))
+        }
+        OutputFormat::Table => eprintln!("Error: {err:#}"),
+    }
+}
+
+async fn run(cli: Cli) -> anyhow::Result<()> {
+    if cli.debug {
+        // reqwest-tracing records request/response fields (method, url,
+        // status, time_elapsed) onto a span rather than firing a discrete
+        // event, so span-close events must be turned on explicitly -- a
+        // bare fmt() subscriber prints nothing for it otherwise.
+        tracing_subscriber::fmt()
+            .with_writer(std::io::stderr)
+            .with_target(false)
+            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
+            .init();
+    }
 
     let command = match cli.command {
         Commands::Completions { shell } => {
@@ -137,15 +174,25 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Login => return login(cli.api_url, cli.token).await,
         Commands::Logout => return logout(),
+        Commands::Whoami => {
+            let config = config::Config::resolve(cli.api_url, cli.token)?;
+            let client = build_client(config.api_url, config.token.as_deref());
+            return whoami(&client, cli.format).await;
+        }
         Commands::Group(cmd) => *cmd,
     };
 
     let config = config::Config::resolve(cli.api_url, cli.token)?;
     let client = build_client(config.api_url, config.token.as_deref());
+    cli::dispatch(&client, command, cli.format).await
+}
 
-    if let Err(err) = cli::dispatch(&client, command, cli.format).await {
-        eprintln!("Error: {err:#}");
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
+    let cli = Cli::parse();
+    let format = cli.format;
+    if let Err(err) = run(cli).await {
+        print_error(&err, format);
         std::process::exit(1);
     }
-    Ok(())
 }
