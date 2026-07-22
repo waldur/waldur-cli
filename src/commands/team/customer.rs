@@ -66,12 +66,75 @@ pub struct CustomerListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
-    /// Only fetch these fields from the server (comma-separated),
-    /// instead of the complete object -- avoids over-fetching.
-    /// Table output always does this already (using its own
-    /// display columns); for json/toon/tsv, which fetch the
-    /// complete object by default, this narrows what they get too.
-    #[arg(long, value_delimiter = ',')]
+    ///Only fetch these fields from the server (comma-separated), instead of the complete object -- avoids over-fetching. Table output always does this already (using its own display columns); for json/toon/tsv, which fetch the complete object by default, this narrows what they get too.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["abbreviation",
+            "access_subnets",
+            "accounting_start_date",
+            "address",
+            "agreement_number",
+            "apartment_nr",
+            "archived",
+            "backend_id",
+            "bank_account",
+            "bank_name",
+            "billing_price_estimate",
+            "blocked",
+            "call_managing_organization_uuid",
+            "city",
+            "contact_details",
+            "country",
+            "country_name",
+            "created",
+            "customer_credit",
+            "customer_unallocated_credit",
+            "default_affiliations",
+            "default_tax_percent",
+            "description",
+            "display_billing_info_in_projects",
+            "display_name",
+            "domain",
+            "email",
+            "grace_period_days",
+            "has_affiliate_links",
+            "homepage",
+            "house_nr",
+            "household",
+            "image",
+            "is_service_provider",
+            "latitude",
+            "longitude",
+            "max_service_accounts",
+            "name",
+            "native_name",
+            "notification_emails",
+            "organization_groups",
+            "parish",
+            "payment_profiles",
+            "phone_number",
+            "postal",
+            "project_metadata_checklist",
+            "project_slug_template",
+            "projects_count",
+            "registration_code",
+            "service_provider",
+            "service_provider_uuid",
+            "slug",
+            "sponsor_number",
+            "state",
+            "street",
+            "url",
+            "user_affiliations",
+            "user_email_patterns",
+            "user_identity_sources",
+            "users_count",
+            "uuid",
+            "vat_code"]
+        ),
+    )]
     pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
@@ -193,7 +256,11 @@ pub async fn run(
                     args.limit,
                 )
                 .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            let display_columns: Vec<&str> = match &args.fields {
+                Some(fields) => fields.iter().map(String::as_str).collect(),
+                None => COLUMNS.to_vec(),
+            };
+            crate::output::print_result(&result, &display_columns, format)?;
         }
         CustomerCommand::Get(args) => {
             let result = client.customers_retrieve(args.uuid.as_str(), None).await?;

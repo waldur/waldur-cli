@@ -74,12 +74,65 @@ pub struct ProjectListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
-    /// Only fetch these fields from the server (comma-separated),
-    /// instead of the complete object -- avoids over-fetching.
-    /// Table output always does this already (using its own
-    /// display columns); for json/toon/tsv, which fetch the
-    /// complete object by default, this narrows what they get too.
-    #[arg(long, value_delimiter = ',')]
+    ///Only fetch these fields from the server (comma-separated), instead of the complete object -- avoids over-fetching. Table output always does this already (using its own display columns); for json/toon/tsv, which fetch the complete object by default, this narrows what they get too.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["affiliation",
+            "affiliation_code",
+            "affiliation_name",
+            "affiliation_uuid",
+            "backend_id",
+            "billing_price_estimate",
+            "created",
+            "customer",
+            "customer_abbreviation",
+            "customer_display_billing_info_in_projects",
+            "customer_grace_period_days",
+            "customer_name",
+            "customer_native_name",
+            "customer_slug",
+            "customer_uuid",
+            "description",
+            "effective_end_date",
+            "end_date",
+            "end_date_requested_by",
+            "end_date_updated_at",
+            "grace_period_days",
+            "image",
+            "is_in_grace_period",
+            "is_industry",
+            "is_removed",
+            "kind",
+            "marketplace_resource_count",
+            "max_service_accounts",
+            "name",
+            "oecd_fos_2007_code",
+            "oecd_fos_2007_label",
+            "project_credit",
+            "project_metadata",
+            "resources_count",
+            "science_domain_code",
+            "science_domain_name",
+            "science_domain_uuid",
+            "science_sub_domain",
+            "science_sub_domain_code",
+            "science_sub_domain_name",
+            "slug",
+            "staff_notes",
+            "start_date",
+            "termination_metadata",
+            "type",
+            "type_name",
+            "type_uuid",
+            "url",
+            "user_affiliations",
+            "user_email_patterns",
+            "user_identity_sources",
+            "uuid"]
+        ),
+    )]
     pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
@@ -209,7 +262,11 @@ pub async fn run(
                     args.limit,
                 )
                 .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            let display_columns: Vec<&str> = match &args.fields {
+                Some(fields) => fields.iter().map(String::as_str).collect(),
+                None => COLUMNS.to_vec(),
+            };
+            crate::output::print_result(&result, &display_columns, format)?;
         }
         ProjectCommand::Get(args) => {
             let result = client.projects_retrieve(args.uuid.as_str(), None).await?;

@@ -25,11 +25,7 @@ pub struct UserPermissionRequestListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
-    /// Only fetch these fields from the server (comma-separated),
-    /// instead of the complete object -- avoids over-fetching.
-    /// Table output always does this already (using its own
-    /// display columns); for json/toon/tsv, which fetch the
-    /// complete object by default, this narrows what they get too.
+    ///Only fetch these fields from the server (comma-separated), instead of the complete object -- avoids over-fetching. Table output always does this already (using its own display columns); for json/toon/tsv, which fetch the complete object by default, this narrows what they get too.
     #[arg(long, value_delimiter = ',')]
     pub fields: Option<Vec<String>>,
 }
@@ -81,7 +77,11 @@ pub async fn run(
                     args.limit,
                 )
                 .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            let display_columns: Vec<&str> = match &args.fields {
+                Some(fields) => fields.iter().map(String::as_str).collect(),
+                None => COLUMNS.to_vec(),
+            };
+            crate::output::print_result(&result, &display_columns, format)?;
         }
         UserPermissionRequestCommand::Get(args) => {
             let result = client

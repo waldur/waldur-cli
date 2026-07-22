@@ -31,8 +31,13 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/waldur/waldur-cli/relea
 ```
 
 ```powershell
-# Windows
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/waldur/waldur-cli/releases/latest/download/waldur-cli-installer.ps1 | iex"
+# Windows -- download first, then run as a local file. Piping the download
+# directly into `iex` in one line works too, but some AV/EDR products (e.g.
+# Trend Micro Deep Security) flag that fetch-and-execute-inline pattern as
+# suspicious behavior on powershell.exe, even though the script itself is
+# harmless -- running it as a file avoids that.
+irm https://github.com/waldur/waldur-cli/releases/latest/download/waldur-cli-installer.ps1 -OutFile waldur-cli-installer.ps1
+powershell -ExecutionPolicy Bypass -File waldur-cli-installer.ps1
 ```
 
 Or build from source: `cargo build --release` (needs a Rust toolchain).
@@ -84,6 +89,12 @@ narrows any of them the same way, and always overrides table's default when give
 ```bash
 waldur-cli team customer list --format json --fields uuid,name
 ```
+
+`--fields` validates against the real field names each resource actually accepts (shown in
+its own `--help`) and rejects anything else before making a request -- Waldur's API silently
+ignores unknown field names rather than rejecting them (an all-invalid list silently falls
+back to returning the complete object, no error at all), so a typo would otherwise fail
+silently instead of loudly.
 
 `--format tsv` gives tab-separated values, one row per line, no header -- for shell loops
 and `cut`/`awk` pipelines where `--format json` would need an extra `jq` step:

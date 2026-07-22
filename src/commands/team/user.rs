@@ -70,12 +70,75 @@ pub struct UserListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
-    /// Only fetch these fields from the server (comma-separated),
-    /// instead of the complete object -- avoids over-fetching.
-    /// Table output always does this already (using its own
-    /// display columns); for json/toon/tsv, which fetch the
-    /// complete object by default, this narrows what they get too.
-    #[arg(long, value_delimiter = ',')]
+    ///Only fetch these fields from the server (comma-separated), instead of the complete object -- avoids over-fetching. Table output always does this already (using its own display columns); for json/toon/tsv, which fetch the complete object by default, this narrows what they get too.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["active_isds",
+            "address",
+            "affiliations",
+            "agree_with_policy",
+            "agreement_date",
+            "attribute_sources",
+            "birth_date",
+            "can_use_personal_access_tokens",
+            "civil_number",
+            "country_of_residence",
+            "date_joined",
+            "deactivation_reason",
+            "description",
+            "eduperson_assurance",
+            "email",
+            "first_name",
+            "full_name",
+            "gender",
+            "has_active_session",
+            "has_usable_password",
+            "identity_provider_fields",
+            "identity_provider_label",
+            "identity_provider_management_url",
+            "identity_provider_name",
+            "identity_source",
+            "image",
+            "ip_address",
+            "is_active",
+            "is_admin_deactivated",
+            "is_identity_manager",
+            "is_staff",
+            "is_support",
+            "job_title",
+            "last_name",
+            "managed_isds",
+            "nationalities",
+            "nationality",
+            "native_name",
+            "notifications_enabled",
+            "organization",
+            "organization_address",
+            "organization_country",
+            "organization_registry_code",
+            "organization_type",
+            "organization_vat_code",
+            "permissions",
+            "personal_title",
+            "phone_number",
+            "place_of_birth",
+            "preferred_language",
+            "primary_gid",
+            "registration_method",
+            "requested_email",
+            "should_protect_user_details",
+            "slug",
+            "token",
+            "token_expires_at",
+            "token_lifetime",
+            "uid_number",
+            "url",
+            "username",
+            "uuid"]
+        ),
+    )]
     pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
@@ -198,7 +261,11 @@ pub async fn run(
                     args.limit,
                 )
                 .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            let display_columns: Vec<&str> = match &args.fields {
+                Some(fields) => fields.iter().map(String::as_str).collect(),
+                None => COLUMNS.to_vec(),
+            };
+            crate::output::print_result(&result, &display_columns, format)?;
         }
         UserCommand::Get(args) => {
             let result = client.users_retrieve(args.uuid.as_str(), None).await?;

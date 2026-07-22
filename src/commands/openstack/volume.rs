@@ -70,12 +70,70 @@ pub struct VolumeListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
-    /// Only fetch these fields from the server (comma-separated),
-    /// instead of the complete object -- avoids over-fetching.
-    /// Table output always does this already (using its own
-    /// display columns); for json/toon/tsv, which fetch the
-    /// complete object by default, this narrows what they get too.
-    #[arg(long, value_delimiter = ',')]
+    ///Only fetch these fields from the server (comma-separated), instead of the complete object -- avoids over-fetching. Table output always does this already (using its own display columns); for json/toon/tsv, which fetch the complete object by default, this narrows what they get too.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["access_url",
+            "action",
+            "action_details",
+            "availability_zone",
+            "availability_zone_name",
+            "backend_id",
+            "bootable",
+            "created",
+            "customer",
+            "customer_abbreviation",
+            "customer_name",
+            "customer_native_name",
+            "customer_uuid",
+            "description",
+            "device",
+            "error_message",
+            "error_traceback",
+            "extend_enabled",
+            "image",
+            "image_metadata",
+            "image_name",
+            "instance",
+            "instance_marketplace_uuid",
+            "instance_name",
+            "is_limit_based",
+            "is_usage_based",
+            "marketplace_category_name",
+            "marketplace_category_uuid",
+            "marketplace_offering_name",
+            "marketplace_offering_plugin_options",
+            "marketplace_offering_type",
+            "marketplace_offering_uuid",
+            "marketplace_plan_uuid",
+            "marketplace_resource_state",
+            "marketplace_resource_uuid",
+            "metadata",
+            "modified",
+            "name",
+            "project",
+            "project_name",
+            "project_uuid",
+            "resource_type",
+            "runtime_state",
+            "service_name",
+            "service_settings",
+            "service_settings_error_message",
+            "service_settings_state",
+            "service_settings_uuid",
+            "size",
+            "source_snapshot",
+            "state",
+            "tenant",
+            "tenant_uuid",
+            "type",
+            "type_name",
+            "url",
+            "uuid"]
+        ),
+    )]
     pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
@@ -195,7 +253,11 @@ pub async fn run(
                     args.limit,
                 )
                 .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            let display_columns: Vec<&str> = match &args.fields {
+                Some(fields) => fields.iter().map(String::as_str).collect(),
+                None => COLUMNS.to_vec(),
+            };
+            crate::output::print_result(&result, &display_columns, format)?;
         }
         VolumeCommand::Get(args) => {
             let result = client

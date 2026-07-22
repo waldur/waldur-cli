@@ -66,12 +66,83 @@ pub struct InstanceListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
-    /// Only fetch these fields from the server (comma-separated),
-    /// instead of the complete object -- avoids over-fetching.
-    /// Table output always does this already (using its own
-    /// display columns); for json/toon/tsv, which fetch the
-    /// complete object by default, this narrows what they get too.
-    #[arg(long, value_delimiter = ',')]
+    ///Only fetch these fields from the server (comma-separated), instead of the complete object -- avoids over-fetching. Table output always does this already (using its own display columns); for json/toon/tsv, which fetch the complete object by default, this narrows what they get too.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["access_url",
+            "action",
+            "action_details",
+            "availability_zone",
+            "availability_zone_name",
+            "backend_id",
+            "config_drive",
+            "connect_directly_to_external_network",
+            "cores",
+            "created",
+            "customer",
+            "customer_abbreviation",
+            "customer_name",
+            "customer_native_name",
+            "customer_uuid",
+            "description",
+            "disk",
+            "error_message",
+            "error_traceback",
+            "external_address",
+            "external_ips",
+            "flavor_disk",
+            "flavor_name",
+            "floating_ips",
+            "hypervisor_hostname",
+            "image_name",
+            "internal_ips",
+            "is_limit_based",
+            "is_usage_based",
+            "key_fingerprint",
+            "key_name",
+            "latitude",
+            "longitude",
+            "marketplace_category_name",
+            "marketplace_category_uuid",
+            "marketplace_offering_name",
+            "marketplace_offering_plugin_options",
+            "marketplace_offering_type",
+            "marketplace_offering_uuid",
+            "marketplace_plan_uuid",
+            "marketplace_resource_state",
+            "marketplace_resource_uuid",
+            "min_disk",
+            "min_ram",
+            "modified",
+            "name",
+            "ports",
+            "project",
+            "project_name",
+            "project_uuid",
+            "ram",
+            "rancher_cluster",
+            "resource_type",
+            "runtime_state",
+            "security_groups",
+            "server_group",
+            "service_name",
+            "service_settings",
+            "service_settings_error_message",
+            "service_settings_state",
+            "service_settings_uuid",
+            "ssh_public_key",
+            "start_time",
+            "state",
+            "tenant",
+            "tenant_uuid",
+            "url",
+            "user_data",
+            "uuid",
+            "volumes"]
+        ),
+    )]
     pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
@@ -182,7 +253,11 @@ pub async fn run(
                     args.limit,
                 )
                 .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            let display_columns: Vec<&str> = match &args.fields {
+                Some(fields) => fields.iter().map(String::as_str).collect(),
+                None => COLUMNS.to_vec(),
+            };
+            crate::output::print_result(&result, &display_columns, format)?;
         }
         InstanceCommand::Get(args) => {
             let result = client

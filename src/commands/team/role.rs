@@ -40,12 +40,39 @@ pub struct RoleListArgs {
     /// takes), instead of fetching the complete result
     #[arg(long)]
     pub limit: Option<i64>,
-    /// Only fetch these fields from the server (comma-separated),
-    /// instead of the complete object -- avoids over-fetching.
-    /// Table output always does this already (using its own
-    /// display columns); for json/toon/tsv, which fetch the
-    /// complete object by default, this narrows what they get too.
-    #[arg(long, value_delimiter = ',')]
+    ///Only fetch these fields from the server (comma-separated), instead of the complete object -- avoids over-fetching. Table output always does this already (using its own display columns); for json/toon/tsv, which fetch the complete object by default, this narrows what they get too.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["content_type",
+            "customer_name",
+            "customer_uuid",
+            "description",
+            "description_ar",
+            "description_cs",
+            "description_da",
+            "description_de",
+            "description_en",
+            "description_es",
+            "description_et",
+            "description_fr",
+            "description_it",
+            "description_lt",
+            "description_lv",
+            "description_nb",
+            "description_ru",
+            "description_sv",
+            "is_active",
+            "is_system_role",
+            "name",
+            "permissions",
+            "template_name",
+            "template_uuid",
+            "users_count",
+            "uuid"]
+        ),
+    )]
     pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
@@ -123,7 +150,11 @@ pub async fn run(
                     args.limit,
                 )
                 .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            let display_columns: Vec<&str> = match &args.fields {
+                Some(fields) => fields.iter().map(String::as_str).collect(),
+                None => COLUMNS.to_vec(),
+            };
+            crate::output::print_result(&result, &display_columns, format)?;
         }
         RoleCommand::Get(args) => {
             let result = client.roles_retrieve(args.uuid.as_str(), None).await?;
