@@ -3,7 +3,7 @@ stages:
 
 Build:
   stage: test
-  image: registry.hpc.ut.ee/mirror/library/rust:1.88-bookworm
+  image: registry.hpc.ut.ee/mirror/library/rust:1.89-bookworm
   cache:
     key: cargo
     paths:
