@@ -3,7 +3,8 @@ mod commands;
 mod config;
 mod output;
 
-use clap::Parser;
+use clap::{CommandFactory, Parser, Subcommand};
+use clap_complete::Shell;
 use output::OutputFormat;
 use waldur_client::HttpClient;
 
@@ -15,7 +16,7 @@ use waldur_client::HttpClient;
 #[command(name = "waldur-cli", version, about)]
 struct Cli {
     #[command(subcommand)]
-    command: cli::GroupCommand,
+    command: Commands,
 
     /// Waldur API base URL. Falls back to the WALDUR_API_URL env var.
     #[arg(long, global = true)]
@@ -30,9 +31,44 @@ struct Cli {
     format: OutputFormat,
 }
 
+// Flattens the generated `cli::GroupCommand` variants (openstack/team) in
+// alongside the hand-written `completions` command, so both sit at the same
+// top level without touching generated code.
+#[derive(Subcommand, Debug)]
+enum Commands {
+    #[command(flatten)]
+    Group(Box<cli::GroupCommand>),
+    /// Generate a shell completion script and print it to stdout
+    Completions {
+        /// Shell to generate completions for
+        shell: Shell,
+    },
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+
+    let command = match cli.command {
+        Commands::Completions { shell } => {
+            let mut cmd = Cli::command();
+            let name = cmd.get_name().to_string();
+            // Generate into an in-memory buffer rather than stdout directly:
+            // clap_complete panics internally on a write error, which a bare
+            // `waldur-cli completions bash | head` would trigger via SIGPIPE.
+            let mut buf = Vec::new();
+            clap_complete::generate(shell, &mut cmd, name, &mut buf);
+            use std::io::Write;
+            if let Err(err) = std::io::stdout().write_all(&buf) {
+                if err.kind() != std::io::ErrorKind::BrokenPipe {
+                    return Err(err.into());
+                }
+            }
+            return Ok(());
+        }
+        Commands::Group(cmd) => *cmd,
+    };
+
     let config = config::Config::resolve(cli.api_url, cli.token)?;
 
     let mut client = HttpClient::new().with_base_url(config.api_url);
@@ -44,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
         client = client.with_api_key(format!("Token {token}"));
     }
 
-    if let Err(err) = cli::dispatch(&client, cli.command, cli.format).await {
+    if let Err(err) = cli::dispatch(&client, command, cli.format).await {
         eprintln!("Error: {err:#}");
         std::process::exit(1);
     }

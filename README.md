@@ -54,6 +54,23 @@ request body as a `--request` flag containing raw JSON, validated against the sa
 request struct rs-client itself uses — this keeps the CLI simple and avoids needing a flag
 per field of every resource's (sometimes large) request schema.
 
+## Shell completions
+
+`waldur-cli completions <shell>` prints a completion script for `bash`, `zsh`, `fish`,
+`powershell`, or `elvish` covering the full subcommand tree (`openstack tenant list`,
+`team project create`, ...).
+
+```bash
+# bash
+waldur-cli completions bash > ~/.local/share/bash-completion/completions/waldur-cli
+
+# zsh (any directory on $fpath)
+waldur-cli completions zsh > "${fpath[1]}/_waldur-cli"
+
+# fish
+waldur-cli completions fish > ~/.config/fish/completions/waldur-cli.fish
+```
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
