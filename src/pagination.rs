@@ -33,7 +33,7 @@ const MAX_PAGE_SIZE: i64 = 300;
 /// a real result set (10_000 * 300 = 3,000,000 items).
 const MAX_PAGES: i64 = 10_000;
 
-fn build_client() -> ClientWithMiddleware {
+pub(crate) fn build_client() -> ClientWithMiddleware {
     ClientBuilder::new(reqwest::Client::new())
         .with(TracingMiddleware::default())
         .build()

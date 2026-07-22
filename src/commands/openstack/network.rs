@@ -2,7 +2,6 @@
 //! see that repo's README for how to regenerate.
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
-use waldur_client::HttpClient;
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "state", "project_name"];
 ///OpenStack networks
 #[derive(clap::Subcommand, Debug)]
@@ -136,7 +135,7 @@ pub struct NetworkDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    client: &HttpClient,
+    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     command: NetworkCommand,
@@ -209,7 +208,7 @@ pub async fn run(
                 query_params.push(("tenant_uuid".to_string(), v.clone()));
             }
             if let Some(v) = &args.r#type {
-                query_params.push(("r#type".to_string(), v.clone()));
+                query_params.push(("type".to_string(), v.clone()));
             }
             match &args.fields {
                 Some(fields) => {
@@ -240,30 +239,46 @@ pub async fn run(
             crate::output::print_result(&result, &display_columns, format)?;
         }
         NetworkCommand::Get(args) => {
-            let result = client
-                .openstack_networks_retrieve(args.uuid.as_str(), None)
+            let path = format!("{}{}{}", "/api/openstack-networks/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::GET,
+                    &path,
+                    None,
+                )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         NetworkCommand::Update(args) => {
-            let result = client
-                .openstack_networks_update(
-                    args.uuid.as_str(),
-                    serde_json::from_str::<
-                        waldur_client::OpenStackNetworkRequest,
-                    >(&args.request)
-                        .with_context(|| {
-                            format!(
-                                "--{} is not valid JSON for the expected request body",
-                                stringify!(request)
-                            )
-                        })?,
+            serde_json::from_str::<waldur_client::OpenStackNetworkRequest>(&args.request)
+                .with_context(|| {
+                    format!(
+                        "--{} is not valid JSON for the expected request body",
+                        stringify!(request)
+                    )
+                })?;
+            let path = format!("{}{}{}", "/api/openstack-networks/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::PUT,
+                    &path,
+                    Some(&args.request),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         NetworkCommand::Delete(args) => {
-            let _ = client.openstack_networks_destroy(args.uuid.as_str()).await?;
+            let path = format!("{}{}{}", "/api/openstack-networks/", args.uuid, "/");
+            let _ = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::DELETE,
+                    &path,
+                    None,
+                )
+                .await?;
             match format {
                 crate::output::OutputFormat::Json => {
                     println!(

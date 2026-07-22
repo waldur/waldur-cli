@@ -1,6 +1,7 @@
 mod cli;
 mod commands;
 mod config;
+mod http;
 mod output;
 mod pagination;
 
@@ -13,7 +14,7 @@ use waldur_client::HttpClient;
 /// Scriptable CLI for Waldur MasterMind, covering OpenStack resource
 /// management and team/organization management. Generated command surface
 /// (see waldur/waldur-cli-generator); this file and config.rs/output.rs/
-/// pagination.rs are hand-written and not touched by generation.
+/// pagination.rs/http.rs are hand-written and not touched by generation.
 #[derive(Parser, Debug)]
 #[command(name = "waldur-cli", version, about)]
 struct Cli {

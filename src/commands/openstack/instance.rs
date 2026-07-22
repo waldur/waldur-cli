@@ -2,7 +2,6 @@
 //! see that repo's README for how to regenerate.
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
-use waldur_client::HttpClient;
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "state", "project_name"];
 ///OpenStack instances (VMs)
 #[derive(clap::Subcommand, Debug)]
@@ -42,8 +41,6 @@ pub struct InstanceListArgs {
     pub name: Option<String>,
     #[arg(long)]
     pub name_exact: Option<String>,
-    #[arg(long)]
-    pub o: Option<String>,
     #[arg(long)]
     pub project: Option<String>,
     #[arg(long)]
@@ -156,7 +153,7 @@ pub struct InstanceUpdateArgs {
     pub request: String,
 }
 pub async fn run(
-    client: &HttpClient,
+    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     command: InstanceCommand,
@@ -260,24 +257,34 @@ pub async fn run(
             crate::output::print_result(&result, &display_columns, format)?;
         }
         InstanceCommand::Get(args) => {
-            let result = client
-                .openstack_instances_retrieve(args.uuid.as_str(), None)
+            let path = format!("{}{}{}", "/api/openstack-instances/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::GET,
+                    &path,
+                    None,
+                )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         InstanceCommand::Update(args) => {
-            let result = client
-                .openstack_instances_update(
-                    args.uuid.as_str(),
-                    serde_json::from_str::<
-                        waldur_client::OpenStackInstanceRequest,
-                    >(&args.request)
-                        .with_context(|| {
-                            format!(
-                                "--{} is not valid JSON for the expected request body",
-                                stringify!(request)
-                            )
-                        })?,
+            serde_json::from_str::<
+                waldur_client::OpenStackInstanceRequest,
+            >(&args.request)
+                .with_context(|| {
+                    format!(
+                        "--{} is not valid JSON for the expected request body",
+                        stringify!(request)
+                    )
+                })?;
+            let path = format!("{}{}{}", "/api/openstack-instances/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::PUT,
+                    &path,
+                    Some(&args.request),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;

@@ -2,7 +2,6 @@
 //! see that repo's README for how to regenerate.
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
-use waldur_client::HttpClient;
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "abbreviation", "state"];
 ///Customers (organizations)
 #[derive(clap::Subcommand, Debug)]
@@ -157,7 +156,7 @@ pub struct CustomerDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    client: &HttpClient,
+    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     command: CustomerCommand,
@@ -263,40 +262,65 @@ pub async fn run(
             crate::output::print_result(&result, &display_columns, format)?;
         }
         CustomerCommand::Get(args) => {
-            let result = client.customers_retrieve(args.uuid.as_str(), None).await?;
+            let path = format!("{}{}{}", "/api/customers/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::GET,
+                    &path,
+                    None,
+                )
+                .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         CustomerCommand::Create(args) => {
-            let result = client
-                .customers_create(
-                    serde_json::from_str::<waldur_client::CustomerRequest>(&args.request)
-                        .with_context(|| {
-                            format!(
-                                "--{} is not valid JSON for the expected request body",
-                                stringify!(request)
-                            )
-                        })?,
+            serde_json::from_str::<waldur_client::CustomerRequest>(&args.request)
+                .with_context(|| {
+                    format!(
+                        "--{} is not valid JSON for the expected request body",
+                        stringify!(request)
+                    )
+                })?;
+            let path = "/api/customers/".to_string();
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&args.request),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         CustomerCommand::Update(args) => {
-            let result = client
-                .customers_update(
-                    args.uuid.as_str(),
-                    serde_json::from_str::<waldur_client::CustomerRequest>(&args.request)
-                        .with_context(|| {
-                            format!(
-                                "--{} is not valid JSON for the expected request body",
-                                stringify!(request)
-                            )
-                        })?,
+            serde_json::from_str::<waldur_client::CustomerRequest>(&args.request)
+                .with_context(|| {
+                    format!(
+                        "--{} is not valid JSON for the expected request body",
+                        stringify!(request)
+                    )
+                })?;
+            let path = format!("{}{}{}", "/api/customers/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::PUT,
+                    &path,
+                    Some(&args.request),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         CustomerCommand::Delete(args) => {
-            let _ = client.customers_destroy(args.uuid.as_str()).await?;
+            let path = format!("{}{}{}", "/api/customers/", args.uuid, "/");
+            let _ = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::DELETE,
+                    &path,
+                    None,
+                )
+                .await?;
             match format {
                 crate::output::OutputFormat::Json => {
                     println!(

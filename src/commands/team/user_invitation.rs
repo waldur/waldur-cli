@@ -2,7 +2,6 @@
 //! see that repo's README for how to regenerate.
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
-use waldur_client::HttpClient;
 const COLUMNS: &[&str; 4usize] = &["uuid", "email", "role_name", "state"];
 ///User invitations
 #[derive(clap::Subcommand, Debug)]
@@ -68,7 +67,7 @@ pub struct UserInvitationDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    client: &HttpClient,
+    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     command: UserInvitationCommand,
@@ -136,44 +135,65 @@ pub async fn run(
             crate::output::print_result(&result, &display_columns, format)?;
         }
         UserInvitationCommand::Get(args) => {
-            let result = client.user_invitations_retrieve(args.uuid.as_str()).await?;
+            let path = format!("{}{}{}", "/api/user-invitations/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::GET,
+                    &path,
+                    None,
+                )
+                .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         UserInvitationCommand::Create(args) => {
-            let result = client
-                .user_invitations_create(
-                    serde_json::from_str::<
-                        waldur_client::InvitationRequest,
-                    >(&args.request)
-                        .with_context(|| {
-                            format!(
-                                "--{} is not valid JSON for the expected request body",
-                                stringify!(request)
-                            )
-                        })?,
+            serde_json::from_str::<waldur_client::InvitationRequest>(&args.request)
+                .with_context(|| {
+                    format!(
+                        "--{} is not valid JSON for the expected request body",
+                        stringify!(request)
+                    )
+                })?;
+            let path = "/api/user-invitations/".to_string();
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&args.request),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         UserInvitationCommand::Update(args) => {
-            let result = client
-                .user_invitations_update(
-                    args.uuid.as_str(),
-                    serde_json::from_str::<
-                        waldur_client::InvitationUpdateRequest,
-                    >(&args.request)
-                        .with_context(|| {
-                            format!(
-                                "--{} is not valid JSON for the expected request body",
-                                stringify!(request)
-                            )
-                        })?,
+            serde_json::from_str::<waldur_client::InvitationUpdateRequest>(&args.request)
+                .with_context(|| {
+                    format!(
+                        "--{} is not valid JSON for the expected request body",
+                        stringify!(request)
+                    )
+                })?;
+            let path = format!("{}{}{}", "/api/user-invitations/", args.uuid, "/");
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::PUT,
+                    &path,
+                    Some(&args.request),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         UserInvitationCommand::Delete(args) => {
-            let _ = client.user_invitations_destroy(args.uuid.as_str()).await?;
+            let path = format!("{}{}{}", "/api/user-invitations/", args.uuid, "/");
+            let _ = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::DELETE,
+                    &path,
+                    None,
+                )
+                .await?;
             match format {
                 crate::output::OutputFormat::Json => {
                     println!(
