@@ -196,4 +196,4 @@ waldur-cli completions fish > ~/.config/fish/completions/waldur-cli.fish
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT.
