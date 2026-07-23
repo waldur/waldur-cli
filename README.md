@@ -88,6 +88,19 @@ header; `list` requests pages of up to 300 at a time (Waldur's max) and keeps go
 has everything, merging the result into one array before rendering in whichever `--format`
 you asked for.
 
+`--filter KEY=VALUE` (repeatable) narrows the result server-side (AWS CLI's `--filters` /
+kubectl's `--field-selector`) instead of a dedicated flag per filterable field -- some
+resources have 20+ of them. Each key is validated against that resource's actual filter
+fields and their types (string/bool/int) before a request is even made, so a typo or a bad
+value (`archived=maybe`) fails locally with the valid key list, rather than a round trip for
+a 400 or, worse, Waldur's API silently ignoring an unrecognized key:
+
+```bash
+waldur-cli team customer list --filter archived=false --filter name=Acme
+waldur-cli team customer list --filter bogus=1
+# Error: unknown filter key `bogus` -- valid keys: abbreviation, accounting_is_running, ...
+```
+
 `--limit N` caps that at N items instead, for a resource with more results than you actually
 want -- both to bound how long a huge fetch takes, and to bound the damage if a page fails
 partway through a very long one (a smaller `--limit` means fewer requests, so a failure on a
@@ -116,6 +129,18 @@ its own `--help`) and rejects anything else before making a request -- Waldur's 
 ignores unknown field names rather than rejecting them (an all-invalid list silently falls
 back to returning the complete object, no error at all), so a typo would otherwise fail
 silently instead of loudly.
+
+`--jmespath EXPR` reshapes/narrows the already-fetched result client-side with a
+[JMESPath](https://jmespath.org) expression (AWS CLI's `--query`) -- for extracting just what
+you need, or trimming a result before feeding it to an LLM, without a separate `jq` step.
+Distinct from `--filter`, which narrows what's *fetched* in the first place (and distinct
+from a resource's own `query` filter field, if it has one -- that's `--filter query=...`, not
+this flag):
+
+```bash
+waldur-cli team customer list --jmespath '[].name'
+waldur-cli team customer list --jmespath "[?blocked==\`true\`].uuid"
+```
 
 `--format tsv` gives tab-separated values, one row per line, no header -- for shell loops
 and `cut`/`awk` pipelines where `--format json` would need an extra `jq` step:

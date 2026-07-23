@@ -3,6 +3,33 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "state", "size"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("attach_instance_uuid", crate::filter::FilterKind::Str),
+    ("availability_zone_name", crate::filter::FilterKind::Str),
+    ("backend_id", crate::filter::FilterKind::Str),
+    ("can_manage", crate::filter::FilterKind::Bool),
+    ("customer", crate::filter::FilterKind::Str),
+    ("customer_abbreviation", crate::filter::FilterKind::Str),
+    ("customer_name", crate::filter::FilterKind::Str),
+    ("customer_native_name", crate::filter::FilterKind::Str),
+    ("customer_uuid", crate::filter::FilterKind::Str),
+    ("description", crate::filter::FilterKind::Str),
+    ("external_ip", crate::filter::FilterKind::Str),
+    ("instance", crate::filter::FilterKind::Str),
+    ("instance_uuid", crate::filter::FilterKind::Str),
+    ("name", crate::filter::FilterKind::Str),
+    ("name_exact", crate::filter::FilterKind::Str),
+    ("project", crate::filter::FilterKind::Str),
+    ("project_name", crate::filter::FilterKind::Str),
+    ("project_uuid", crate::filter::FilterKind::Str),
+    ("runtime_state", crate::filter::FilterKind::Str),
+    ("service_settings_name", crate::filter::FilterKind::Str),
+    ("service_settings_uuid", crate::filter::FilterKind::Str),
+    ("snapshot", crate::filter::FilterKind::Str),
+    ("snapshot_uuid", crate::filter::FilterKind::Str),
+    ("tenant", crate::filter::FilterKind::Str),
+    ("tenant_uuid", crate::filter::FilterKind::Str),
+];
 const UPDATE_SKELETON: &str = "{\n  \"bootable\": null,\n  \"description\": null,\n  \"name\": \"\"\n}";
 ///OpenStack volumes
 #[derive(clap::Subcommand, Debug)]
@@ -16,56 +43,18 @@ pub enum VolumeCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct VolumeListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub attach_instance_uuid: Option<String>,
-    #[arg(long)]
-    pub availability_zone_name: Option<String>,
-    #[arg(long)]
-    pub backend_id: Option<String>,
-    #[arg(long)]
-    pub can_manage: Option<bool>,
-    #[arg(long)]
-    pub customer: Option<String>,
-    #[arg(long)]
-    pub customer_abbreviation: Option<String>,
-    #[arg(long)]
-    pub customer_name: Option<String>,
-    #[arg(long)]
-    pub customer_native_name: Option<String>,
-    #[arg(long)]
-    pub customer_uuid: Option<String>,
-    #[arg(long)]
-    pub description: Option<String>,
-    #[arg(long)]
-    pub external_ip: Option<String>,
-    #[arg(long)]
-    pub instance: Option<String>,
-    #[arg(long)]
-    pub instance_uuid: Option<String>,
-    #[arg(long)]
-    pub name: Option<String>,
-    #[arg(long)]
-    pub name_exact: Option<String>,
-    #[arg(long)]
-    pub project: Option<String>,
-    #[arg(long)]
-    pub project_name: Option<String>,
-    #[arg(long)]
-    pub project_uuid: Option<String>,
-    #[arg(long)]
-    pub runtime_state: Option<String>,
-    #[arg(long)]
-    pub service_settings_name: Option<String>,
-    #[arg(long)]
-    pub service_settings_uuid: Option<String>,
-    #[arg(long)]
-    pub snapshot: Option<String>,
-    #[arg(long)]
-    pub snapshot_uuid: Option<String>,
-    #[arg(long)]
-    pub tenant: Option<String>,
-    #[arg(long)]
-    pub tenant_uuid: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -178,82 +167,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         VolumeCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = &args.attach_instance_uuid {
-                query_params.push(("attach_instance_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.availability_zone_name {
-                query_params.push(("availability_zone_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.backend_id {
-                query_params.push(("backend_id".to_string(), v.clone()));
-            }
-            if let Some(v) = args.can_manage {
-                query_params.push(("can_manage".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.customer {
-                query_params.push(("customer".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_abbreviation {
-                query_params.push(("customer_abbreviation".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_name {
-                query_params.push(("customer_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_native_name {
-                query_params.push(("customer_native_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_uuid {
-                query_params.push(("customer_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.description {
-                query_params.push(("description".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.external_ip {
-                query_params.push(("external_ip".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.instance {
-                query_params.push(("instance".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.instance_uuid {
-                query_params.push(("instance_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.name {
-                query_params.push(("name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.name_exact {
-                query_params.push(("name_exact".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.project {
-                query_params.push(("project".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.project_name {
-                query_params.push(("project_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.project_uuid {
-                query_params.push(("project_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.runtime_state {
-                query_params.push(("runtime_state".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.service_settings_name {
-                query_params.push(("service_settings_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.service_settings_uuid {
-                query_params.push(("service_settings_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.snapshot {
-                query_params.push(("snapshot".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.snapshot_uuid {
-                query_params.push(("snapshot_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.tenant {
-                query_params.push(("tenant".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.tenant_uuid {
-                query_params.push(("tenant_uuid".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -279,6 +196,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }

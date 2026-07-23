@@ -3,6 +3,16 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 3usize] = &["uuid", "name", "description"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("available_for_customer", crate::filter::FilterKind::Str),
+    ("content_type", crate::filter::FilterKind::Str),
+    ("description", crate::filter::FilterKind::Str),
+    ("include_concealed", crate::filter::FilterKind::Bool),
+    ("is_active", crate::filter::FilterKind::Bool),
+    ("is_system_role", crate::filter::FilterKind::Bool),
+    ("name", crate::filter::FilterKind::Str),
+    ("query", crate::filter::FilterKind::Str),
+];
 const CREATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
 const UPDATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
 ///Roles
@@ -21,22 +31,18 @@ pub enum RoleCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct RoleListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub available_for_customer: Option<String>,
-    #[arg(long)]
-    pub content_type: Option<String>,
-    #[arg(long)]
-    pub description: Option<String>,
-    #[arg(long)]
-    pub include_concealed: Option<bool>,
-    #[arg(long)]
-    pub is_active: Option<bool>,
-    #[arg(long)]
-    pub is_system_role: Option<bool>,
-    #[arg(long)]
-    pub name: Option<String>,
-    #[arg(long)]
-    pub query: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -150,31 +156,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         RoleCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = &args.available_for_customer {
-                query_params.push(("available_for_customer".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.content_type {
-                query_params.push(("content_type".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.description {
-                query_params.push(("description".to_string(), v.clone()));
-            }
-            if let Some(v) = args.include_concealed {
-                query_params.push(("include_concealed".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.is_active {
-                query_params.push(("is_active".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.is_system_role {
-                query_params.push(("is_system_role".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.name {
-                query_params.push(("name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.query {
-                query_params.push(("query".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -200,6 +185,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }

@@ -3,6 +3,33 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "customer_name", "description"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("accounting_is_running", crate::filter::FilterKind::Bool),
+    ("affiliation_name", crate::filter::FilterKind::Str),
+    ("backend_id", crate::filter::FilterKind::Str),
+    ("can_admin", crate::filter::FilterKind::Bool),
+    ("can_manage", crate::filter::FilterKind::Bool),
+    ("conceal_finished_projects", crate::filter::FilterKind::Bool),
+    ("created", crate::filter::FilterKind::Str),
+    ("created_before", crate::filter::FilterKind::Str),
+    ("customer_abbreviation", crate::filter::FilterKind::Str),
+    ("customer_name", crate::filter::FilterKind::Str),
+    ("customer_native_name", crate::filter::FilterKind::Str),
+    ("description", crate::filter::FilterKind::Str),
+    ("has_affiliation", crate::filter::FilterKind::Bool),
+    ("include_terminated", crate::filter::FilterKind::Bool),
+    ("is_removed", crate::filter::FilterKind::Bool),
+    ("modified", crate::filter::FilterKind::Str),
+    ("modified_before", crate::filter::FilterKind::Str),
+    ("name", crate::filter::FilterKind::Str),
+    ("name_exact", crate::filter::FilterKind::Str),
+    ("query", crate::filter::FilterKind::Str),
+    ("science_domain_uuid", crate::filter::FilterKind::Str),
+    ("science_sub_domain_uuid", crate::filter::FilterKind::Str),
+    ("slug", crate::filter::FilterKind::Str),
+    ("user_uuid", crate::filter::FilterKind::Str),
+    ("user_uuid_with_active_role", crate::filter::FilterKind::Str),
+];
 const CREATE_SKELETON: &str = "{\n  \"affiliation_uuid\": null,\n  \"backend_id\": null,\n  \"customer\": \"\",\n  \"description\": null,\n  \"end_date\": null,\n  \"grace_period_days\": null,\n  \"image\": null,\n  \"is_industry\": null,\n  \"kind\": null,\n  \"name\": \"\",\n  \"oecd_fos_2007_code\": null,\n  \"science_sub_domain\": null,\n  \"slug\": null,\n  \"staff_notes\": null,\n  \"start_date\": null,\n  \"type\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null\n}";
 const UPDATE_SKELETON: &str = "{\n  \"affiliation_uuid\": null,\n  \"backend_id\": null,\n  \"customer\": \"\",\n  \"description\": null,\n  \"end_date\": null,\n  \"grace_period_days\": null,\n  \"image\": null,\n  \"is_industry\": null,\n  \"kind\": null,\n  \"name\": \"\",\n  \"oecd_fos_2007_code\": null,\n  \"science_sub_domain\": null,\n  \"slug\": null,\n  \"staff_notes\": null,\n  \"start_date\": null,\n  \"type\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null\n}";
 ///Projects
@@ -21,56 +48,18 @@ pub enum ProjectCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct ProjectListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub accounting_is_running: Option<bool>,
-    #[arg(long)]
-    pub affiliation_name: Option<String>,
-    #[arg(long)]
-    pub backend_id: Option<String>,
-    #[arg(long)]
-    pub can_admin: Option<bool>,
-    #[arg(long)]
-    pub can_manage: Option<bool>,
-    #[arg(long)]
-    pub conceal_finished_projects: Option<bool>,
-    #[arg(long)]
-    pub created: Option<String>,
-    #[arg(long)]
-    pub created_before: Option<String>,
-    #[arg(long)]
-    pub customer_abbreviation: Option<String>,
-    #[arg(long)]
-    pub customer_name: Option<String>,
-    #[arg(long)]
-    pub customer_native_name: Option<String>,
-    #[arg(long)]
-    pub description: Option<String>,
-    #[arg(long)]
-    pub has_affiliation: Option<bool>,
-    #[arg(long)]
-    pub include_terminated: Option<bool>,
-    #[arg(long)]
-    pub is_removed: Option<bool>,
-    #[arg(long)]
-    pub modified: Option<String>,
-    #[arg(long)]
-    pub modified_before: Option<String>,
-    #[arg(long)]
-    pub name: Option<String>,
-    #[arg(long)]
-    pub name_exact: Option<String>,
-    #[arg(long)]
-    pub query: Option<String>,
-    #[arg(long)]
-    pub science_domain_uuid: Option<String>,
-    #[arg(long)]
-    pub science_sub_domain_uuid: Option<String>,
-    #[arg(long)]
-    pub slug: Option<String>,
-    #[arg(long)]
-    pub user_uuid: Option<String>,
-    #[arg(long)]
-    pub user_uuid_with_active_role: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -210,83 +199,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         ProjectCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = args.accounting_is_running {
-                query_params.push(("accounting_is_running".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.affiliation_name {
-                query_params.push(("affiliation_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.backend_id {
-                query_params.push(("backend_id".to_string(), v.clone()));
-            }
-            if let Some(v) = args.can_admin {
-                query_params.push(("can_admin".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.can_manage {
-                query_params.push(("can_manage".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.conceal_finished_projects {
-                query_params
-                    .push(("conceal_finished_projects".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.created {
-                query_params.push(("created".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.created_before {
-                query_params.push(("created_before".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_abbreviation {
-                query_params.push(("customer_abbreviation".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_name {
-                query_params.push(("customer_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_native_name {
-                query_params.push(("customer_native_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.description {
-                query_params.push(("description".to_string(), v.clone()));
-            }
-            if let Some(v) = args.has_affiliation {
-                query_params.push(("has_affiliation".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.include_terminated {
-                query_params.push(("include_terminated".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.is_removed {
-                query_params.push(("is_removed".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.modified {
-                query_params.push(("modified".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.modified_before {
-                query_params.push(("modified_before".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.name {
-                query_params.push(("name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.name_exact {
-                query_params.push(("name_exact".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.query {
-                query_params.push(("query".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.science_domain_uuid {
-                query_params.push(("science_domain_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.science_sub_domain_uuid {
-                query_params.push(("science_sub_domain_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.slug {
-                query_params.push(("slug".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.user_uuid {
-                query_params.push(("user_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.user_uuid_with_active_role {
-                query_params.push(("user_uuid_with_active_role".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -312,6 +228,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }

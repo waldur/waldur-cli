@@ -1,9 +1,11 @@
 mod cli;
 mod commands;
 mod config;
+mod filter;
 mod http;
 mod output;
 mod pagination;
+mod query;
 mod request;
 
 use anyhow::Context;

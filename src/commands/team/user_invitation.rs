@@ -3,6 +3,18 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 4usize] = &["uuid", "email", "role_name", "state"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("civil_number", crate::filter::FilterKind::Str),
+    ("customer_uuid", crate::filter::FilterKind::Str),
+    ("email", crate::filter::FilterKind::Str),
+    ("email_exact", crate::filter::FilterKind::Str),
+    ("role_name", crate::filter::FilterKind::Str),
+    ("role_uuid", crate::filter::FilterKind::Str),
+    ("scope", crate::filter::FilterKind::Str),
+    ("scope_description", crate::filter::FilterKind::Str),
+    ("scope_name", crate::filter::FilterKind::Str),
+    ("scope_type", crate::filter::FilterKind::Str),
+];
 const CREATE_SKELETON: &str = "{\n  \"civil_number\": null,\n  \"email\": \"\",\n  \"extra_invitation_text\": null,\n  \"full_name\": null,\n  \"job_title\": null,\n  \"native_name\": null,\n  \"organization\": null,\n  \"phone_number\": null,\n  \"role\": \"\",\n  \"scope\": \"\"\n}";
 const UPDATE_SKELETON: &str = "{\n  \"email\": \"\",\n  \"role\": null\n}";
 ///User invitations
@@ -21,26 +33,18 @@ pub enum UserInvitationCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct UserInvitationListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub civil_number: Option<String>,
-    #[arg(long)]
-    pub customer_uuid: Option<String>,
-    #[arg(long)]
-    pub email: Option<String>,
-    #[arg(long)]
-    pub email_exact: Option<String>,
-    #[arg(long)]
-    pub role_name: Option<String>,
-    #[arg(long)]
-    pub role_uuid: Option<String>,
-    #[arg(long)]
-    pub scope: Option<String>,
-    #[arg(long)]
-    pub scope_description: Option<String>,
-    #[arg(long)]
-    pub scope_name: Option<String>,
-    #[arg(long)]
-    pub scope_type: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -123,37 +127,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         UserInvitationCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = &args.civil_number {
-                query_params.push(("civil_number".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_uuid {
-                query_params.push(("customer_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.email {
-                query_params.push(("email".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.email_exact {
-                query_params.push(("email_exact".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.role_name {
-                query_params.push(("role_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.role_uuid {
-                query_params.push(("role_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.scope {
-                query_params.push(("scope".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.scope_description {
-                query_params.push(("scope_description".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.scope_name {
-                query_params.push(("scope_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.scope_type {
-                query_params.push(("scope_type".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -179,6 +156,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }

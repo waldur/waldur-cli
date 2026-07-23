@@ -2,6 +2,12 @@
 //! see that repo's README for how to regenerate.
 #![allow(clippy::too_many_arguments)]
 const COLUMNS: &[&str; 3usize] = &["uuid", "customer_name", "is_pending"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("closed", crate::filter::FilterKind::Str),
+    ("customer_uuid", crate::filter::FilterKind::Str),
+    ("is_pending", crate::filter::FilterKind::Bool),
+    ("reviewer_uuid", crate::filter::FilterKind::Str),
+];
 ///Customer permission reviews (read-only)
 #[derive(clap::Subcommand, Debug)]
 pub enum CustomerPermissionsReviewCommand {
@@ -12,14 +18,18 @@ pub enum CustomerPermissionsReviewCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct CustomerPermissionsReviewListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub closed: Option<String>,
-    #[arg(long)]
-    pub customer_uuid: Option<String>,
-    #[arg(long)]
-    pub is_pending: Option<bool>,
-    #[arg(long)]
-    pub reviewer_uuid: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -41,19 +51,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         CustomerPermissionsReviewCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = &args.closed {
-                query_params.push(("closed".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_uuid {
-                query_params.push(("customer_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = args.is_pending {
-                query_params.push(("is_pending".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.reviewer_uuid {
-                query_params.push(("reviewer_uuid".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -79,6 +80,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }

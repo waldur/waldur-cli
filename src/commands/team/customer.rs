@@ -3,6 +3,29 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "abbreviation", "state"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("abbreviation", crate::filter::FilterKind::Str),
+    ("accounting_is_running", crate::filter::FilterKind::Bool),
+    ("agreement_number", crate::filter::FilterKind::Str),
+    ("archived", crate::filter::FilterKind::Bool),
+    ("backend_id", crate::filter::FilterKind::Str),
+    ("contact_details", crate::filter::FilterKind::Str),
+    ("current_user_has_project_create_permission", crate::filter::FilterKind::Bool),
+    ("has_resources", crate::filter::FilterKind::Str),
+    ("is_call_managing_organization", crate::filter::FilterKind::Bool),
+    ("is_service_provider", crate::filter::FilterKind::Bool),
+    ("name", crate::filter::FilterKind::Str),
+    ("name_exact", crate::filter::FilterKind::Str),
+    ("native_name", crate::filter::FilterKind::Str),
+    ("o", crate::filter::FilterKind::Str),
+    ("organization_group_name", crate::filter::FilterKind::Str),
+    ("owned_by_current_user", crate::filter::FilterKind::Bool),
+    ("query", crate::filter::FilterKind::Str),
+    ("registration_code", crate::filter::FilterKind::Str),
+    ("service_provider_uuid", crate::filter::FilterKind::Str),
+    ("slug", crate::filter::FilterKind::Str),
+    ("user_uuid", crate::filter::FilterKind::Str),
+];
 const CREATE_SKELETON: &str = "{\n  \"abbreviation\": null,\n  \"access_subnets\": null,\n  \"accounting_start_date\": null,\n  \"address\": null,\n  \"agreement_number\": null,\n  \"apartment_nr\": null,\n  \"archived\": null,\n  \"backend_id\": null,\n  \"bank_account\": null,\n  \"bank_name\": null,\n  \"blocked\": null,\n  \"city\": null,\n  \"contact_details\": null,\n  \"country\": null,\n  \"default_tax_percent\": null,\n  \"description\": null,\n  \"display_billing_info_in_projects\": null,\n  \"domain\": null,\n  \"email\": null,\n  \"grace_period_days\": null,\n  \"homepage\": null,\n  \"house_nr\": null,\n  \"household\": null,\n  \"image\": null,\n  \"latitude\": null,\n  \"longitude\": null,\n  \"max_service_accounts\": null,\n  \"name\": \"\",\n  \"native_name\": null,\n  \"notification_emails\": null,\n  \"parish\": null,\n  \"phone_number\": null,\n  \"postal\": null,\n  \"project_metadata_checklist\": null,\n  \"project_slug_template\": null,\n  \"registration_code\": null,\n  \"slug\": null,\n  \"sponsor_number\": null,\n  \"state\": null,\n  \"street\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null,\n  \"vat_code\": null\n}";
 const UPDATE_SKELETON: &str = "{\n  \"abbreviation\": null,\n  \"access_subnets\": null,\n  \"accounting_start_date\": null,\n  \"address\": null,\n  \"agreement_number\": null,\n  \"apartment_nr\": null,\n  \"archived\": null,\n  \"backend_id\": null,\n  \"bank_account\": null,\n  \"bank_name\": null,\n  \"blocked\": null,\n  \"city\": null,\n  \"contact_details\": null,\n  \"country\": null,\n  \"default_tax_percent\": null,\n  \"description\": null,\n  \"display_billing_info_in_projects\": null,\n  \"domain\": null,\n  \"email\": null,\n  \"grace_period_days\": null,\n  \"homepage\": null,\n  \"house_nr\": null,\n  \"household\": null,\n  \"image\": null,\n  \"latitude\": null,\n  \"longitude\": null,\n  \"max_service_accounts\": null,\n  \"name\": \"\",\n  \"native_name\": null,\n  \"notification_emails\": null,\n  \"parish\": null,\n  \"phone_number\": null,\n  \"postal\": null,\n  \"project_metadata_checklist\": null,\n  \"project_slug_template\": null,\n  \"registration_code\": null,\n  \"slug\": null,\n  \"sponsor_number\": null,\n  \"state\": null,\n  \"street\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null,\n  \"vat_code\": null\n}";
 ///Customers (organizations)
@@ -21,48 +44,18 @@ pub enum CustomerCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct CustomerListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub abbreviation: Option<String>,
-    #[arg(long)]
-    pub accounting_is_running: Option<bool>,
-    #[arg(long)]
-    pub agreement_number: Option<String>,
-    #[arg(long)]
-    pub archived: Option<bool>,
-    #[arg(long)]
-    pub backend_id: Option<String>,
-    #[arg(long)]
-    pub contact_details: Option<String>,
-    #[arg(long)]
-    pub current_user_has_project_create_permission: Option<bool>,
-    #[arg(long)]
-    pub has_resources: Option<String>,
-    #[arg(long)]
-    pub is_call_managing_organization: Option<bool>,
-    #[arg(long)]
-    pub is_service_provider: Option<bool>,
-    #[arg(long)]
-    pub name: Option<String>,
-    #[arg(long)]
-    pub name_exact: Option<String>,
-    #[arg(long)]
-    pub native_name: Option<String>,
-    #[arg(long)]
-    pub o: Option<String>,
-    #[arg(long)]
-    pub organization_group_name: Option<String>,
-    #[arg(long)]
-    pub owned_by_current_user: Option<bool>,
-    #[arg(long)]
-    pub query: Option<String>,
-    #[arg(long)]
-    pub registration_code: Option<String>,
-    #[arg(long)]
-    pub service_provider_uuid: Option<String>,
-    #[arg(long)]
-    pub slug: Option<String>,
-    #[arg(long)]
-    pub user_uuid: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -212,75 +205,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         CustomerCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = &args.abbreviation {
-                query_params.push(("abbreviation".to_string(), v.clone()));
-            }
-            if let Some(v) = args.accounting_is_running {
-                query_params.push(("accounting_is_running".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.agreement_number {
-                query_params.push(("agreement_number".to_string(), v.clone()));
-            }
-            if let Some(v) = args.archived {
-                query_params.push(("archived".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.backend_id {
-                query_params.push(("backend_id".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.contact_details {
-                query_params.push(("contact_details".to_string(), v.clone()));
-            }
-            if let Some(v) = args.current_user_has_project_create_permission {
-                query_params
-                    .push((
-                        "current_user_has_project_create_permission".to_string(),
-                        v.to_string(),
-                    ));
-            }
-            if let Some(v) = &args.has_resources {
-                query_params.push(("has_resources".to_string(), v.clone()));
-            }
-            if let Some(v) = args.is_call_managing_organization {
-                query_params
-                    .push(("is_call_managing_organization".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.is_service_provider {
-                query_params.push(("is_service_provider".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.name {
-                query_params.push(("name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.name_exact {
-                query_params.push(("name_exact".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.native_name {
-                query_params.push(("native_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.o {
-                query_params.push(("o".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.organization_group_name {
-                query_params.push(("organization_group_name".to_string(), v.clone()));
-            }
-            if let Some(v) = args.owned_by_current_user {
-                query_params.push(("owned_by_current_user".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.query {
-                query_params.push(("query".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.registration_code {
-                query_params.push(("registration_code".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.service_provider_uuid {
-                query_params.push(("service_provider_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.slug {
-                query_params.push(("slug".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.user_uuid {
-                query_params.push(("user_uuid".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -306,6 +234,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }

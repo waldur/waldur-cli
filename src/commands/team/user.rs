@@ -3,6 +3,31 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 4usize] = &["uuid", "username", "full_name", "email"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("agreement_date", crate::filter::FilterKind::Str),
+    ("civil_number", crate::filter::FilterKind::Str),
+    ("customer_uuid", crate::filter::FilterKind::Str),
+    ("date_joined", crate::filter::FilterKind::Str),
+    ("description", crate::filter::FilterKind::Str),
+    ("email", crate::filter::FilterKind::Str),
+    ("full_name", crate::filter::FilterKind::Str),
+    ("is_active", crate::filter::FilterKind::Bool),
+    ("is_staff", crate::filter::FilterKind::Bool),
+    ("is_support", crate::filter::FilterKind::Bool),
+    ("job_title", crate::filter::FilterKind::Str),
+    ("modified", crate::filter::FilterKind::Str),
+    ("native_name", crate::filter::FilterKind::Str),
+    ("organization", crate::filter::FilterKind::Str),
+    ("organization_roles", crate::filter::FilterKind::Str),
+    ("phone_number", crate::filter::FilterKind::Str),
+    ("project_roles", crate::filter::FilterKind::Str),
+    ("project_uuid", crate::filter::FilterKind::Str),
+    ("query", crate::filter::FilterKind::Str),
+    ("registration_method", crate::filter::FilterKind::Str),
+    ("user_keyword", crate::filter::FilterKind::Str),
+    ("username", crate::filter::FilterKind::Str),
+    ("username_list", crate::filter::FilterKind::Str),
+];
 const CREATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_address\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"organization_vat_code\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
 const UPDATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_address\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"organization_vat_code\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
 ///Users
@@ -21,52 +46,18 @@ pub enum UserCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct UserListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub agreement_date: Option<String>,
-    #[arg(long)]
-    pub civil_number: Option<String>,
-    #[arg(long)]
-    pub customer_uuid: Option<String>,
-    #[arg(long)]
-    pub date_joined: Option<String>,
-    #[arg(long)]
-    pub description: Option<String>,
-    #[arg(long)]
-    pub email: Option<String>,
-    #[arg(long)]
-    pub full_name: Option<String>,
-    #[arg(long)]
-    pub is_active: Option<bool>,
-    #[arg(long)]
-    pub is_staff: Option<bool>,
-    #[arg(long)]
-    pub is_support: Option<bool>,
-    #[arg(long)]
-    pub job_title: Option<String>,
-    #[arg(long)]
-    pub modified: Option<String>,
-    #[arg(long)]
-    pub native_name: Option<String>,
-    #[arg(long)]
-    pub organization: Option<String>,
-    #[arg(long)]
-    pub organization_roles: Option<String>,
-    #[arg(long)]
-    pub phone_number: Option<String>,
-    #[arg(long)]
-    pub project_roles: Option<String>,
-    #[arg(long)]
-    pub project_uuid: Option<String>,
-    #[arg(long)]
-    pub query: Option<String>,
-    #[arg(long)]
-    pub registration_method: Option<String>,
-    #[arg(long)]
-    pub user_keyword: Option<String>,
-    #[arg(long)]
-    pub username: Option<String>,
-    #[arg(long)]
-    pub username_list: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -216,76 +207,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         UserCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = &args.agreement_date {
-                query_params.push(("agreement_date".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.civil_number {
-                query_params.push(("civil_number".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.customer_uuid {
-                query_params.push(("customer_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.date_joined {
-                query_params.push(("date_joined".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.description {
-                query_params.push(("description".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.email {
-                query_params.push(("email".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.full_name {
-                query_params.push(("full_name".to_string(), v.clone()));
-            }
-            if let Some(v) = args.is_active {
-                query_params.push(("is_active".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.is_staff {
-                query_params.push(("is_staff".to_string(), v.to_string()));
-            }
-            if let Some(v) = args.is_support {
-                query_params.push(("is_support".to_string(), v.to_string()));
-            }
-            if let Some(v) = &args.job_title {
-                query_params.push(("job_title".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.modified {
-                query_params.push(("modified".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.native_name {
-                query_params.push(("native_name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.organization {
-                query_params.push(("organization".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.organization_roles {
-                query_params.push(("organization_roles".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.phone_number {
-                query_params.push(("phone_number".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.project_roles {
-                query_params.push(("project_roles".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.project_uuid {
-                query_params.push(("project_uuid".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.query {
-                query_params.push(("query".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.registration_method {
-                query_params.push(("registration_method".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.user_keyword {
-                query_params.push(("user_keyword".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.username {
-                query_params.push(("username".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.username_list {
-                query_params.push(("username_list".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -311,6 +236,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }

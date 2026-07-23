@@ -3,6 +3,12 @@
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
 const COLUMNS: &[&str; 3usize] = &["uuid", "name", "parent_uuid"];
+const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("name", crate::filter::FilterKind::Str),
+    ("name_exact", crate::filter::FilterKind::Str),
+    ("o", crate::filter::FilterKind::Str),
+    ("parent", crate::filter::FilterKind::Str),
+];
 const CREATE_SKELETON: &str = "{\n  \"name\": \"\",\n  \"parent\": null\n}";
 const UPDATE_SKELETON: &str = "{\n  \"name\": \"\",\n  \"parent\": null\n}";
 ///Organization groups
@@ -21,14 +27,18 @@ pub enum OrganizationGroupCommand {
 }
 #[derive(clap::Args, Debug)]
 pub struct OrganizationGroupListArgs {
+    /// Filter results server-side, KEY=VALUE (repeatable). See
+    /// --help's error on an unknown key for the valid keys.
+    #[arg(long = "filter", value_name = "KEY=VALUE")]
+    pub filter: Vec<String>,
+    /// Reshape/narrow the already-fetched result with a JMESPath
+    /// expression (https://jmespath.org), client-side -- e.g.
+    /// [].name or [?blocked==`true`]. Applied after fetching,
+    /// before rendering in --format. (Named distinctly from
+    /// --filter's own `query` key, several resources' own
+    /// full-text search field.)
     #[arg(long)]
-    pub name: Option<String>,
-    #[arg(long)]
-    pub name_exact: Option<String>,
-    #[arg(long)]
-    pub o: Option<String>,
-    #[arg(long)]
-    pub parent: Option<String>,
+    pub jmespath: Option<String>,
     /// Stop after this many items (across however many pages that
     /// takes), instead of fetching the complete result
     #[arg(long)]
@@ -111,19 +121,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     match command {
         OrganizationGroupCommand::List(args) => {
-            let mut query_params: Vec<(String, String)> = Vec::new();
-            if let Some(v) = &args.name {
-                query_params.push(("name".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.name_exact {
-                query_params.push(("name_exact".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.o {
-                query_params.push(("o".to_string(), v.clone()));
-            }
-            if let Some(v) = &args.parent {
-                query_params.push(("parent".to_string(), v.clone()));
-            }
+            let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
+                &args.filter,
+                FILTER_SPEC,
+            )?;
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -149,6 +150,11 @@ pub async fn run(
             let display_columns: Vec<&str> = match &args.fields {
                 Some(fields) => fields.iter().map(String::as_str).collect(),
                 None => COLUMNS.to_vec(),
+            };
+            let result: serde_json::Value = serde_json::Value::Array(result);
+            let result = match &args.jmespath {
+                Some(expr) => crate::query::apply(result, expr)?,
+                None => result,
             };
             crate::output::print_result(&result, &display_columns, format)?;
         }
