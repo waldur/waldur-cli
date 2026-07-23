@@ -20,8 +20,10 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("project_uuid", crate::filter::FilterKind::Str),
     ("service_settings_name", crate::filter::FilterKind::Str),
     ("service_settings_uuid", crate::filter::FilterKind::Str),
+    ("state", crate::filter::FilterKind::Str),
 ];
 const UPDATE_SKELETON: &str = "{\n  \"availability_zone\": null,\n  \"default_volume_type_name\": null,\n  \"description\": null,\n  \"name\": \"\",\n  \"security_groups\": null,\n  \"skip_creation_of_default_router\": null,\n  \"skip_creation_of_default_subnet\": null\n}";
+const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"name\": \"\",\n    \"security_groups\": null,\n    \"skip_connection_extnet\": null,\n    \"skip_creation_of_default_router\": null,\n    \"skip_creation_of_default_subnet\": null,\n    \"subnet_cidr\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
 ///OpenStack tenants
 #[derive(clap::Subcommand, Debug)]
 pub enum TenantCommand {
@@ -31,6 +33,10 @@ pub enum TenantCommand {
     Get(TenantGetArgs),
     ///Update openstack tenants
     Update(TenantUpdateArgs),
+    ///Provision openstack tenants via a marketplace order
+    Provision(TenantProvisionArgs),
+    ///Terminate openstack tenants via a marketplace order
+    Terminate(TenantTerminateArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct TenantListArgs {
@@ -138,6 +144,62 @@ pub struct TenantUpdateArgs {
     )]
     pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "tenant_provision_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct TenantProvisionArgs {
+    /// The marketplace order body as inline JSON. Use
+    /// --generate-skeleton for a template (offering/project plus
+    /// this resource's typed attributes), or --request-file to
+    /// read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the order body from a JSON or YAML file.
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable order template and exit, instead of
+    /// submitting (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+    /// Submit the order and return immediately, without polling
+    /// it to completion.
+    #[arg(long)]
+    pub no_wait: bool,
+    /// Seconds to wait for the order to reach a terminal state
+    /// before giving up (ignored with --no-wait).
+    #[arg(long, default_value_t = 600)]
+    pub timeout: u64,
+}
+#[derive(clap::Args, Debug)]
+pub struct TenantTerminateArgs {
+    /// The marketplace resource UUID (a resource's
+    /// `marketplace_resource_uuid` field, from get/list) -- not
+    /// the plugin resource's own UUID.
+    pub uuid: String,
+    /// Optional termination attributes as inline JSON, e.g.
+    /// '{"delete_volumes": true}'.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Submit the termination and return immediately, without
+    /// polling the order to completion.
+    #[arg(long)]
+    pub no_wait: bool,
+    /// Seconds to wait for the termination order before giving
+    /// up (ignored with --no-wait).
+    #[arg(long, default_value_t = 600)]
+    pub timeout: u64,
+}
 pub async fn run(
     _client: &waldur_client::HttpClient,
     base_url: &str,
@@ -224,6 +286,37 @@ pub async fn run(
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        TenantCommand::Provision(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(PROVISION_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::order::provision(
+                    base_url,
+                    token,
+                    &body,
+                    !args.no_wait,
+                    args.timeout,
+                    format,
+                )
+                .await?;
+        }
+        TenantCommand::Terminate(args) => {
+            crate::order::terminate(
+                    base_url,
+                    token,
+                    &args.uuid,
+                    args.request.as_deref(),
+                    !args.no_wait,
+                    args.timeout,
+                    format,
+                )
+                .await?;
         }
     }
     Ok(())

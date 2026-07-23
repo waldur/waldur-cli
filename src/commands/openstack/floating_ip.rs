@@ -22,6 +22,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("runtime_state", crate::filter::FilterKind::Str),
     ("service_settings_name", crate::filter::FilterKind::Str),
     ("service_settings_uuid", crate::filter::FilterKind::Str),
+    ("state", crate::filter::FilterKind::Str),
     ("tenant", crate::filter::FilterKind::Str),
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];

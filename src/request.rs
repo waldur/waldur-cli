@@ -41,12 +41,15 @@ pub fn print_skeleton(template: &str, format: SkeletonFormat) -> Result<()> {
 /// expected -- clap's arg group enforces that -- and YAML is converted to
 /// JSON since the wire body is always `application/json`.
 ///
-/// Top-level `null`-valued keys are dropped: a `--generate-skeleton` template
-/// defaults every optional field to `null`, and Waldur's API rejects an
-/// explicit `null` for a non-nullable optional field ("This field may not be
-/// null") while happily accepting the field being *omitted*. So a `null` in
-/// the body reads as "leave this unset" -- fill in the fields you want and
-/// send the template through as-is.
+/// `null`-valued object keys are dropped at every depth: a
+/// `--generate-skeleton` template defaults every optional field to `null`, and
+/// Waldur's API rejects an explicit `null` for a non-nullable optional field
+/// ("This field may not be null") while happily accepting the field being
+/// *omitted*. Recursive (not just top-level) so a `provision` order's nested
+/// `attributes` object round-trips the same way. So a `null` in the body reads
+/// as "leave this unset" -- fill in the fields you want and send the template
+/// through as-is. (Null *array elements* are left alone -- removing them would
+/// change list contents rather than just omit an unset field.)
 pub fn load_body(inline: Option<&str>, file: Option<&Path>) -> Result<String> {
     let raw = match (inline, file) {
         (Some(json), None) => json.to_string(),
@@ -66,8 +69,25 @@ pub fn load_body(inline: Option<&str>, file: Option<&Path>) -> Result<String> {
 
     let mut value: serde_json::Value =
         serde_json::from_str(&raw).context("request body is not valid JSON")?;
-    if let Some(object) = value.as_object_mut() {
-        object.retain(|_, v| !v.is_null());
-    }
+    strip_null_keys(&mut value);
     serde_json::to_string(&value).context("re-serializing request body to JSON")
+}
+
+/// Recursively removes `null`-valued keys from every object, descending into
+/// nested objects and array elements. Null array *elements* are preserved.
+fn strip_null_keys(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            map.retain(|_, v| !v.is_null());
+            for v in map.values_mut() {
+                strip_null_keys(v);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for v in items {
+                strip_null_keys(v);
+            }
+        }
+        _ => {}
+    }
 }

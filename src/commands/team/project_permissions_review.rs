@@ -5,6 +5,7 @@ const COLUMNS: &[&str; 3usize] = &["uuid", "project_name", "is_pending"];
 const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("closed", crate::filter::FilterKind::Str),
     ("is_pending", crate::filter::FilterKind::Bool),
+    ("o", crate::filter::FilterKind::Str),
     ("project_uuid", crate::filter::FilterKind::Str),
     ("reviewer_uuid", crate::filter::FilterKind::Str),
 ];

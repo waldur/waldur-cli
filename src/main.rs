@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod filter;
 mod http;
+mod order;
 mod output;
 mod pagination;
 mod query;

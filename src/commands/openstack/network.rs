@@ -23,6 +23,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("rbac_only", crate::filter::FilterKind::Bool),
     ("service_settings_name", crate::filter::FilterKind::Str),
     ("service_settings_uuid", crate::filter::FilterKind::Str),
+    ("state", crate::filter::FilterKind::Str),
     ("tenant", crate::filter::FilterKind::Str),
     ("tenant_uuid", crate::filter::FilterKind::Str),
     ("type", crate::filter::FilterKind::Str),

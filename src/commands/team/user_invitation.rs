@@ -8,12 +8,14 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("customer_uuid", crate::filter::FilterKind::Str),
     ("email", crate::filter::FilterKind::Str),
     ("email_exact", crate::filter::FilterKind::Str),
+    ("o", crate::filter::FilterKind::Str),
     ("role_name", crate::filter::FilterKind::Str),
     ("role_uuid", crate::filter::FilterKind::Str),
     ("scope", crate::filter::FilterKind::Str),
     ("scope_description", crate::filter::FilterKind::Str),
     ("scope_name", crate::filter::FilterKind::Str),
     ("scope_type", crate::filter::FilterKind::Str),
+    ("state", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"civil_number\": null,\n  \"email\": \"\",\n  \"extra_invitation_text\": null,\n  \"full_name\": null,\n  \"job_title\": null,\n  \"native_name\": null,\n  \"organization\": null,\n  \"phone_number\": null,\n  \"role\": \"\",\n  \"scope\": \"\"\n}";
 const UPDATE_SKELETON: &str = "{\n  \"email\": \"\",\n  \"role\": null\n}";

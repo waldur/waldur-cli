@@ -11,6 +11,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("is_active", crate::filter::FilterKind::Bool),
     ("is_system_role", crate::filter::FilterKind::Bool),
     ("name", crate::filter::FilterKind::Str),
+    ("o", crate::filter::FilterKind::Str),
     ("query", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";

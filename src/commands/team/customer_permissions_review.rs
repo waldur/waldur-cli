@@ -6,6 +6,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("closed", crate::filter::FilterKind::Str),
     ("customer_uuid", crate::filter::FilterKind::Str),
     ("is_pending", crate::filter::FilterKind::Bool),
+    ("o", crate::filter::FilterKind::Str),
     ("reviewer_uuid", crate::filter::FilterKind::Str),
 ];
 ///Customer permission reviews (read-only)

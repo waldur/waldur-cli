@@ -6,7 +6,9 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("created_by", crate::filter::FilterKind::Str),
     ("customer_uuid", crate::filter::FilterKind::Str),
     ("invitation", crate::filter::FilterKind::Str),
+    ("o", crate::filter::FilterKind::Str),
     ("scope", crate::filter::FilterKind::Str),
+    ("state", crate::filter::FilterKind::Str),
 ];
 ///User permission requests (read-only)
 #[derive(clap::Subcommand, Debug)]

@@ -17,6 +17,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("job_title", crate::filter::FilterKind::Str),
     ("modified", crate::filter::FilterKind::Str),
     ("native_name", crate::filter::FilterKind::Str),
+    ("o", crate::filter::FilterKind::Str),
     ("organization", crate::filter::FilterKind::Str),
     ("organization_roles", crate::filter::FilterKind::Str),
     ("phone_number", crate::filter::FilterKind::Str),
