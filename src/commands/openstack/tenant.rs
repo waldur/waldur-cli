@@ -204,6 +204,7 @@ pub async fn run(
     _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
+    project: Option<&str>,
     command: TenantCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -213,6 +214,11 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(project) = project {
+                if !query_params.iter().any(|(k, _)| k == "project_uuid") {
+                    query_params.push(("project_uuid".to_string(), project.to_string()));
+                }
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -300,6 +306,7 @@ pub async fn run(
                     base_url,
                     token,
                     &body,
+                    project,
                     !args.no_wait,
                     args.timeout,
                     format,

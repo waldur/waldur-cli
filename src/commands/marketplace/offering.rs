@@ -3,7 +3,6 @@
 #![allow(clippy::too_many_arguments)]
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "type", "state"];
 const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
-    ("accessible", crate::filter::FilterKind::Bool),
     ("accessible_via_calls", crate::filter::FilterKind::Bool),
     ("allowed_customer_uuid", crate::filter::FilterKind::Str),
     ("attributes", crate::filter::FilterKind::Str),
@@ -95,7 +94,6 @@ pub struct OfferingListArgs {
             "customer_name",
             "customer_uuid",
             "datacite_doi",
-            "default_access_subnets",
             "description",
             "documentation_url",
             "effective_available_limits",
@@ -169,6 +167,7 @@ pub async fn run(
     _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
+    project: Option<&str>,
     command: OfferingCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -178,6 +177,11 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(project) = project {
+                if !query_params.iter().any(|(k, _)| k == "project_uuid") {
+                    query_params.push(("project_uuid".to_string(), project.to_string()));
+                }
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {

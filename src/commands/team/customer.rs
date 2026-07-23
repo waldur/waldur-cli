@@ -11,7 +11,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("backend_id", crate::filter::FilterKind::Str),
     ("contact_details", crate::filter::FilterKind::Str),
     ("current_user_has_project_create_permission", crate::filter::FilterKind::Bool),
-    ("current_user_has_role", crate::filter::FilterKind::Str),
     ("has_resources", crate::filter::FilterKind::Str),
     ("is_call_managing_organization", crate::filter::FilterKind::Bool),
     ("is_service_provider", crate::filter::FilterKind::Bool),
@@ -95,7 +94,6 @@ pub struct CustomerListArgs {
             "domain",
             "email",
             "grace_period_days",
-            "has_affiliate_links",
             "homepage",
             "house_nr",
             "household",
@@ -202,6 +200,7 @@ pub async fn run(
     _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
+    _project: Option<&str>,
     command: CustomerCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {

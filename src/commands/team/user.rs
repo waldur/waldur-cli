@@ -29,8 +29,8 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("username", crate::filter::FilterKind::Str),
     ("username_list", crate::filter::FilterKind::Str),
 ];
-const CREATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_address\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"organization_vat_code\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
-const UPDATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_address\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"organization_vat_code\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
+const CREATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
+const UPDATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
 ///Users
 #[derive(clap::Subcommand, Debug)]
 pub enum UserCommand {
@@ -108,17 +108,14 @@ pub struct UserListArgs {
             "native_name",
             "notifications_enabled",
             "organization",
-            "organization_address",
             "organization_country",
             "organization_registry_code",
             "organization_type",
-            "organization_vat_code",
             "permissions",
             "personal_title",
             "phone_number",
             "place_of_birth",
             "preferred_language",
-            "primary_gid",
             "registration_method",
             "requested_email",
             "should_protect_user_details",
@@ -126,7 +123,6 @@ pub struct UserListArgs {
             "token",
             "token_expires_at",
             "token_lifetime",
-            "uid_number",
             "url",
             "username",
             "uuid"]
@@ -203,6 +199,7 @@ pub async fn run(
     _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
+    project: Option<&str>,
     command: UserCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -212,6 +209,11 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(project) = project {
+                if !query_params.iter().any(|(k, _)| k == "project_uuid") {
+                    query_params.push(("project_uuid".to_string(), project.to_string()));
+                }
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {

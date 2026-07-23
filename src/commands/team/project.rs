@@ -13,7 +13,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("conceal_finished_projects", crate::filter::FilterKind::Bool),
     ("created", crate::filter::FilterKind::Str),
     ("created_before", crate::filter::FilterKind::Str),
-    ("current_user_has_role", crate::filter::FilterKind::Str),
     ("customer", crate::filter::FilterKind::Str),
     ("customer_abbreviation", crate::filter::FilterKind::Str),
     ("customer_name", crate::filter::FilterKind::Str),
@@ -198,6 +197,7 @@ pub async fn run(
     _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
+    _project: Option<&str>,
     command: ProjectCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {

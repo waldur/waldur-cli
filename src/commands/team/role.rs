@@ -4,15 +4,9 @@
 use anyhow::Context;
 const COLUMNS: &[&str; 3usize] = &["uuid", "name", "description"];
 const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
-    ("available_for_customer", crate::filter::FilterKind::Str),
-    ("content_type", crate::filter::FilterKind::Str),
     ("description", crate::filter::FilterKind::Str),
-    ("include_concealed", crate::filter::FilterKind::Bool),
     ("is_active", crate::filter::FilterKind::Bool),
-    ("is_system_role", crate::filter::FilterKind::Bool),
     ("name", crate::filter::FilterKind::Str),
-    ("o", crate::filter::FilterKind::Str),
-    ("query", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
 const UPDATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
@@ -54,8 +48,6 @@ pub struct RoleListArgs {
         value_delimiter = ',',
         value_parser = clap::builder::PossibleValuesParser::new(
             ["content_type",
-            "customer_name",
-            "customer_uuid",
             "description",
             "description_ar",
             "description_cs",
@@ -75,8 +67,6 @@ pub struct RoleListArgs {
             "is_system_role",
             "name",
             "permissions",
-            "template_name",
-            "template_uuid",
             "users_count",
             "uuid"]
         ),
@@ -152,6 +142,7 @@ pub async fn run(
     _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
+    _project: Option<&str>,
     command: RoleCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {

@@ -86,6 +86,7 @@ pub async fn dispatch(
     client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
+    project: Option<&str>,
     command: GroupCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -97,6 +98,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -107,6 +109,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -117,6 +120,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -127,6 +131,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -137,6 +142,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -147,6 +153,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -157,6 +164,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -171,6 +179,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -181,6 +190,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -191,6 +201,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -201,6 +212,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -211,6 +223,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -221,6 +234,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -231,6 +245,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -241,6 +256,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -251,6 +267,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
@@ -265,6 +282,7 @@ pub async fn dispatch(
                             client,
                             base_url,
                             token,
+                            project,
                             cmd,
                             format,
                         )
