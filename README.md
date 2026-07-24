@@ -71,8 +71,8 @@ The full guide lives in [`docs/`](docs/):
    selection, and JMESPath
 3. [Managing resources](docs/3-managing-resources.md) — `create`/`update`/`delete` and
    request-body skeletons
-4. [Provisioning OpenStack](docs/4-provisioning-openstack.md) — the marketplace order flow
-   (`provision`/`terminate`)
+4. [Provisioning](docs/4-provisioning-openstack.md) — the marketplace order flow
+   (`provision`/`terminate`), for OpenStack and any other offering type
 5. [Recipes & tips](docs/5-recipes-and-tips.md) — real-world workflows and things worth
    knowing
 6. [Troubleshooting](docs/6-troubleshooting.md) — errors, `--debug`, exit codes, and shell

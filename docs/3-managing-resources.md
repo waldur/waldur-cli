@@ -3,7 +3,7 @@
 `create`, `update`, and `delete` cover the resources Waldur exposes as direct REST
 operations (mostly under `team`, plus `update` on some OpenStack resources). Creating and
 deleting OpenStack tenants/instances/volumes goes through a different, asynchronous path —
-see [Provisioning OpenStack](4-provisioning-openstack.md).
+see [Provisioning](4-provisioning-openstack.md).
 
 ## The request body
 

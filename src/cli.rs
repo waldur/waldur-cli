@@ -7,7 +7,7 @@ pub enum GroupCommand {
     ///Manage team membership and organization access
     #[command(subcommand)]
     Team(TeamCommand),
-    ///Browse marketplace offerings (for provisioning via `openstack ... provision`)
+    ///Browse offerings and provision resources of any offering type
     #[command(subcommand)]
     Marketplace(MarketplaceCommand),
 }
@@ -75,12 +75,15 @@ pub enum TeamCommand {
         crate::commands::team::user_permission_request::UserPermissionRequestCommand,
     ),
 }
-///Browse marketplace offerings (for provisioning via `openstack ... provision`)
+///Browse offerings and provision resources of any offering type
 #[derive(clap::Subcommand, Debug)]
 pub enum MarketplaceCommand {
     ///Marketplace offerings (public)
     #[command(subcommand)]
     Offering(crate::commands::marketplace::offering::OfferingCommand),
+    ///Marketplace resources (provision/terminate any offering)
+    #[command(subcommand)]
+    Resource(crate::commands::marketplace::resource::ResourceCommand),
 }
 pub async fn dispatch(
     client: &waldur_client::HttpClient,
@@ -296,6 +299,18 @@ pub async fn dispatch(
             match cmd {
                 MarketplaceCommand::Offering(cmd) => {
                     crate::commands::marketplace::offering::run(
+                            client,
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+                MarketplaceCommand::Resource(cmd) => {
+                    crate::commands::marketplace::resource::run(
                             client,
                             base_url,
                             token,
