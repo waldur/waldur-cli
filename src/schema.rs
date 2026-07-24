@@ -6221,5 +6221,5 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
       ]
     }
   ],
-  "version": "0.4.0"
+  "version": "0.5.0"
 }"###;
