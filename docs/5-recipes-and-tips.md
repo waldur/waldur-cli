@@ -136,6 +136,9 @@ waldur-cli openstack instance list \
   the three-level command tree far quicker to navigate — see
   [Troubleshooting](6-troubleshooting.md#shell-completions).
 
+- **Update easily.** Run `waldur-cli update` to seamlessly download and install the latest
+  release from GitHub, avoiding manual un-tarring or re-running installer scripts.
+
 - **`--no-wait` for fire-and-forget provisioning.** Submitting many orders? `--no-wait`
   returns each order immediately; poll or reconcile them yourself instead of blocking one at a
   time.

@@ -40,6 +40,14 @@ powershell -ExecutionPolicy Bypass -File waldur-cli-installer.ps1
 
 Or build from source with a Rust toolchain: `cargo build --release`.
 
+### Updating
+
+Once installed, you can update `waldur-cli` to the latest release directly from the terminal:
+
+```bash
+waldur-cli update
+```
+
 ## Quickstart
 
 ```bash
