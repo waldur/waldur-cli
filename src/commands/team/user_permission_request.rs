@@ -17,6 +17,8 @@ pub enum UserPermissionRequestCommand {
     List(UserPermissionRequestListArgs),
     ///Get user permission requests (read-only)
     Get(UserPermissionRequestGetArgs),
+    ///Wait for a --jmespath condition on user permission requests (read-only)
+    Wait(UserPermissionRequestWaitArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct UserPermissionRequestListArgs {
@@ -43,6 +45,22 @@ pub struct UserPermissionRequestListArgs {
 #[derive(clap::Args, Debug)]
 pub struct UserPermissionRequestGetArgs {
     pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct UserPermissionRequestWaitArgs {
+    pub uuid: String,
+    /// JMESPath condition to poll for, evaluated against the
+    /// fetched object on every poll (e.g. "state=='OK'").
+    /// Waiting stops as soon as this evaluates to anything
+    /// other than false or null.
+    #[arg(long)]
+    pub jmespath: String,
+    /// Seconds to wait for the condition before giving up.
+    #[arg(long, default_value_t = 600)]
+    pub timeout: u64,
+    /// Seconds between polls.
+    #[arg(long, default_value_t = 3)]
+    pub interval: u64,
 }
 pub async fn run(
     base_url: &str,
@@ -118,6 +136,22 @@ pub async fn run(
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        UserPermissionRequestCommand::Wait(args) => {
+            let path = format!(
+                "{}{}{}", "/api/user-permission-requests/", args.uuid, "/"
+            );
+            crate::wait::wait_for(
+                    base_url,
+                    token,
+                    &path,
+                    &args.jmespath,
+                    args.timeout,
+                    args.interval,
+                    COLUMNS,
+                    format,
+                )
+                .await?;
         }
     }
     Ok(())

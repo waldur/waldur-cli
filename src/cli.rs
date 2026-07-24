@@ -84,6 +84,9 @@ pub enum MarketplaceCommand {
     ///Marketplace resources (provision/terminate any offering)
     #[command(subcommand)]
     Resource(crate::commands::marketplace::resource::ResourceCommand),
+    ///Marketplace orders (check status of a submitted provision/terminate)
+    #[command(subcommand)]
+    Order(crate::commands::marketplace::order::OrderCommand),
 }
 pub async fn dispatch(
     base_url: &str,
@@ -293,6 +296,17 @@ pub async fn dispatch(
                 }
                 MarketplaceCommand::Resource(cmd) => {
                     crate::commands::marketplace::resource::run(
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+                MarketplaceCommand::Order(cmd) => {
+                    crate::commands::marketplace::order::run(
                             base_url,
                             token,
                             project,

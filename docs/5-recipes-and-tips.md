@@ -140,5 +140,7 @@ waldur-cli openstack instance list \
   release from GitHub, avoiding manual un-tarring or re-running installer scripts.
 
 - **`--no-wait` for fire-and-forget provisioning.** Submitting many orders? `--no-wait`
-  returns each order immediately; poll or reconcile them yourself instead of blocking one at a
-  time.
+  returns each order immediately; `marketplace order wait <uuid> --jmespath "state=='done'"`
+  (or any resource's own `wait`) picks up the polling later, from the same script or a
+  different one entirely -- see
+  [Waiting on anything, not just orders](4-provisioning-openstack.md#waiting-on-anything-not-just-orders).

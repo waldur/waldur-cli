@@ -5827,6 +5827,39 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
       "type": "terminate"
     },
     {
+      "api_endpoint": "/api/marketplace-orders/{uuid}/",
+      "description": "Get marketplace orders (check status of a submitted provision/terminate)",
+      "http_method": "GET",
+      "parameters": [
+        {
+          "description": "uuid of the resource",
+          "name": "uuid",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "marketplace",
+        "order",
+        "get"
+      ],
+      "type": "get"
+    },
+    {
       "description": "Print the CLI command schema as JSON",
       "parameters": [
         {
@@ -6216,6 +6249,19 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
             "get",
             "provision",
             "terminate"
+          ]
+        },
+        {
+          "default_columns": [
+            "uuid",
+            "state",
+            "resource_uuid",
+            "error_message"
+          ],
+          "description": "Marketplace orders (check status of a submitted provision/terminate)",
+          "name": "order",
+          "verbs": [
+            "get"
           ]
         }
       ]
