@@ -6,6 +6,7 @@ mod http;
 mod order;
 mod output;
 mod pagination;
+mod progress;
 mod query;
 mod request;
 
@@ -207,6 +208,10 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
         .clone()
         .or_else(|| std::env::var("WALDUR_PROFILE").ok())
         .unwrap_or_else(|| config::DEFAULT_PROFILE.to_string());
+
+    // Let the order-polling spinner know to stay quiet under --debug (its
+    // request trace already reports each poll).
+    progress::set_debug(cli.debug);
 
     if cli.debug {
         // reqwest-tracing records request/response fields (method, url,

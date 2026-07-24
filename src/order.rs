@@ -58,7 +58,7 @@ pub async fn provision(
         return Ok(());
     }
 
-    poll_order(base_url, token, &order_uuid, timeout_secs).await?;
+    poll_order(base_url, token, &order_uuid, timeout_secs, "Provisioning").await?;
     // Fetch the actual provisioned resource the order created.
     let resource = crate::http::call_one(
         base_url,
@@ -122,7 +122,7 @@ pub async fn terminate(
         return Ok(());
     }
 
-    poll_order(base_url, token, &order_uuid, timeout_secs).await?;
+    poll_order(base_url, token, &order_uuid, timeout_secs, "Terminating").await?;
     match format {
         OutputFormat::Json => println!("{}", serde_json::json!({"terminated": true, "uuid": resource_uuid})),
         OutputFormat::Table => println!("Terminated {resource_uuid}"),
@@ -165,24 +165,35 @@ fn order_uuid(order: &serde_json::Value) -> Result<String> {
 }
 
 /// Polls an order until it reaches a terminal state, returning the final
-/// order object on success or erroring on a failure state / timeout.
+/// order object on success or erroring on a failure state / timeout. `label`
+/// ("Provisioning"/"Terminating") titles the interactive progress spinner,
+/// which shows elapsed time + the current order state on a TTY (see
+/// `crate::progress`); it's a silent no-op when output isn't a terminal.
 async fn poll_order(
     base_url: &str,
     token: Option<&str>,
     order_uuid: &str,
     timeout_secs: u64,
+    label: &'static str,
 ) -> Result<serde_json::Value> {
-    let deadline = Instant::now() + Duration::from_secs(timeout_secs);
+    let start = Instant::now();
+    let deadline = start + Duration::from_secs(timeout_secs);
     let path = format!("/api/marketplace-orders/{order_uuid}/");
+    let mut spinner = crate::progress::Spinner::new(label);
     loop {
         let order =
             crate::http::call_one(base_url, token, reqwest::Method::GET, &path, None).await?;
         let state = order.get("state").and_then(|v| v.as_str()).unwrap_or("");
+        let last_state = state.to_string();
         match state {
             // Terminal success.
-            "done" => return Ok(order),
+            "done" => {
+                spinner.clear();
+                return Ok(order);
+            }
             // Terminal failures (Waldur's OrderState enum).
             "erred" | "canceled" | "rejected" => {
+                spinner.clear();
                 let msg = order
                     .get("error_message")
                     .and_then(|v| v.as_str())
@@ -193,12 +204,20 @@ async fn poll_order(
             _ => {}
         }
         if Instant::now() >= deadline {
+            spinner.clear();
             bail!(
                 "timed out after {timeout_secs}s waiting for marketplace order {order_uuid} \
                  (last state: {state:?}) -- it may still complete; check with \
                  `waldur-cli` against /api/marketplace-orders/, or retry with a longer --timeout"
             );
         }
-        tokio::time::sleep(POLL_INTERVAL).await;
+        // Animate the spinner between polls: tick every ~100ms so it stays
+        // lively, but only re-poll the order every POLL_INTERVAL (and never
+        // past the deadline).
+        let next_poll = (Instant::now() + POLL_INTERVAL).min(deadline);
+        while Instant::now() < next_poll {
+            spinner.tick(start.elapsed(), &last_state);
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
     }
 }
