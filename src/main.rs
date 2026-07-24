@@ -9,6 +9,7 @@ mod pagination;
 mod progress;
 mod query;
 mod request;
+mod schema;
 
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
@@ -93,6 +94,18 @@ enum Commands {
     },
     /// Clear the selected profile's saved default project
     UnsetProject,
+    /// Print the CLI command schema as JSON — a machine-readable tool
+    /// specification that LLM agents can ingest to discover and use this
+    /// CLI without parsing `--help` text
+    Schema {
+        /// Only include commands from this group (e.g. "openstack", "team")
+        #[arg(long)]
+        group: Option<String>,
+        /// Print only command paths and descriptions (minimal output for
+        /// context budgets — ~200 tokens for the full CLI)
+        #[arg(long)]
+        compact: bool,
+    },
 }
 
 /// Same column set `team user get` uses -- whoami is conceptually that,
@@ -269,6 +282,9 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
             let client = build_client(config.api_url, config.token.as_deref());
             return whoami(&client, cli.format).await;
         }
+        Commands::Schema { group, compact } => {
+            return print_schema(group.as_deref(), compact, cli.format);
+        }
         Commands::Group(cmd) => *cmd,
     };
 
@@ -294,4 +310,87 @@ async fn main() {
         print_error(&err, format);
         std::process::exit(1);
     }
+}
+
+/// The `schema` subcommand: prints the CLI's command schema as JSON,
+/// optionally filtered by group and/or trimmed to a compact form.
+/// Needs no API credentials — everything is embedded at build time.
+fn print_schema(group: Option<&str>, compact: bool, format: OutputFormat) -> anyhow::Result<()> {
+    let full: serde_json::Value = serde_json::from_str(schema::CLI_SCHEMA_JSON)
+        .context("internal error: CLI_SCHEMA_JSON is not valid JSON")?;
+
+    let value = if compact {
+        // Compact mode: groups overview + command path + description only.
+        let mut output = serde_json::json!({
+            "version": full["version"],
+        });
+
+        // Filter groups if --group is set.
+        if let Some(groups) = full["groups"].as_array() {
+            let filtered: Vec<&serde_json::Value> = match group {
+                Some(g) => groups.iter().filter(|gr| gr["name"].as_str() == Some(g)).collect(),
+                None => groups.iter().collect(),
+            };
+            output["groups"] = serde_json::json!(filtered);
+        }
+
+        // Commands: path + description + type only.
+        if let Some(commands) = full["commands"].as_array() {
+            let compact_cmds: Vec<serde_json::Value> = commands
+                .iter()
+                .filter(|cmd| match group {
+                    Some(g) => cmd["path"][0].as_str() == Some(g),
+                    None => true,
+                })
+                .map(|cmd| {
+                    serde_json::json!({
+                        "path": cmd["path"],
+                        "description": cmd["description"],
+                        "type": cmd["type"]
+                    })
+                })
+                .collect();
+            output["commands"] = serde_json::json!(compact_cmds);
+        }
+
+        output
+    } else if let Some(g) = group {
+        // Full mode, filtered to one group.
+        let mut output = serde_json::json!({
+            "version": full["version"],
+        });
+
+        if let Some(groups) = full["groups"].as_array() {
+            let filtered: Vec<&serde_json::Value> = groups
+                .iter()
+                .filter(|gr| gr["name"].as_str() == Some(g))
+                .collect();
+            output["groups"] = serde_json::json!(filtered);
+        }
+
+        if let Some(commands) = full["commands"].as_array() {
+            let filtered: Vec<&serde_json::Value> = commands
+                .iter()
+                .filter(|cmd| cmd["path"][0].as_str() == Some(g))
+                .collect();
+            output["commands"] = serde_json::json!(filtered);
+        }
+
+        output
+    } else {
+        // Full unfiltered output.
+        full
+    };
+
+    // Render in the requested format. The schema is a deeply nested object,
+    // so table/tsv don't apply — fall through to JSON for those.
+    match format {
+        OutputFormat::Toon => println!("{}", serde_toon::to_string(&value)?),
+        OutputFormat::Ndjson => { output::print_ndjson_line(&value)?; }
+        // json / table / tsv all get pretty JSON — table and tsv have no
+        // meaningful columnar representation for a nested schema object.
+        _ => println!("{}", serde_json::to_string_pretty(&value)?),
+    }
+
+    Ok(())
 }

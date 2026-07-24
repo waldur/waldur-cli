@@ -109,6 +109,12 @@ waldur-cli openstack instance list \
   projects, users, …), the `query` filter searches across fields, unlike the exact-match
   field filters.
 
+- **`schema` emits an OpenAPI-for-the-CLI.** If you're building an LLM agent that drives
+  `waldur-cli`, parsing `--help` text is fragile. `waldur-cli schema` outputs a complete JSON
+  description of the command surface — paths, parameters, typed filter keys, and request
+  skeletons — that frameworks can directly ingest as a tool specification. Use `--compact` if
+  you have a tight context budget and only need paths and descriptions.
+
 - **`whoami` before anything destructive.** One command confirms which instance and identity
   your credentials currently resolve to — cheap insurance before a `delete`/`terminate`.
 

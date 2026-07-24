@@ -49,6 +49,7 @@ export WALDUR_ACCESS_TOKEN=your-token
 waldur-cli whoami                              # confirm who/where you're authenticated as
 waldur-cli team customer list                  # a human-readable table
 waldur-cli team project list --format json     # machine-readable, for scripts/agents
+waldur-cli schema --compact                    # emit a JSON tool specification for LLM agents
 waldur-cli openstack instance get 00000000000000000000000000000000
 ```
 
