@@ -213,6 +213,9 @@ pub struct InstanceProvisionArgs {
     /// before giving up (ignored with --no-wait).
     #[arg(long, default_value_t = 600)]
     pub timeout: u64,
+    /// Seconds between polls (ignored with --no-wait).
+    #[arg(long, default_value_t = 3)]
+    pub interval: u64,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceTerminateArgs {
@@ -232,6 +235,9 @@ pub struct InstanceTerminateArgs {
     /// up (ignored with --no-wait).
     #[arg(long, default_value_t = 600)]
     pub timeout: u64,
+    /// Seconds between polls (ignored with --no-wait).
+    #[arg(long, default_value_t = 3)]
+    pub interval: u64,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceWaitArgs {
@@ -372,6 +378,7 @@ pub async fn run(
                     dry_run,
                     !args.no_wait,
                     args.timeout,
+                    args.interval,
                     format,
                 )
                 .await?;
@@ -385,6 +392,7 @@ pub async fn run(
                     dry_run,
                     !args.no_wait,
                     args.timeout,
+                    args.interval,
                     format,
                 )
                 .await?;

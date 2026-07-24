@@ -47,6 +47,7 @@ async fn provision_dry_run_never_sends_the_order() {
         true, // dry_run
         true,
         60,
+        3,
         OutputFormat::Json,
     )
     .await
@@ -84,6 +85,7 @@ async fn provision_injects_ambient_project_when_absent() {
         false,
         true,
         60,
+        3,
         OutputFormat::Json,
     )
     .await
@@ -127,6 +129,7 @@ async fn provision_explicit_project_in_body_wins_over_ambient_scope() {
         false,
         true,
         60,
+        3,
         OutputFormat::Json,
     )
     .await
@@ -165,6 +168,7 @@ async fn provision_no_wait_returns_immediately_without_polling() {
         false,
         false, // wait
         60,
+        3,
         OutputFormat::Json,
     )
     .await
@@ -197,9 +201,10 @@ async fn provision_polls_through_executing_to_done() {
         .mount(&server)
         .await;
 
-    // This crosses one real POLL_INTERVAL (3s) since the first poll reports
-    // "executing" -- accepted cost for exercising the actual polling loop
-    // rather than just its terminal-state branches.
+    // This crosses one real poll interval since the first poll reports
+    // "executing" -- a 1s --interval keeps that cost small while still
+    // exercising the actual polling loop, not just its terminal-state
+    // branches.
     waldur_cli::order::provision(
         &server.uri(),
         Some("t"),
@@ -208,6 +213,7 @@ async fn provision_polls_through_executing_to_done() {
         false,
         true,
         60,
+        1,
         OutputFormat::Json,
     )
     .await
@@ -240,6 +246,7 @@ async fn provision_erred_order_fails_with_the_server_message() {
         false,
         true,
         60,
+        3,
         OutputFormat::Json,
     )
     .await
@@ -279,6 +286,7 @@ async fn provision_never_reaching_a_terminal_state_times_out() {
         false,
         true,
         0,
+        3,
         OutputFormat::Json,
     )
     .await
@@ -297,7 +305,7 @@ async fn terminate_dry_run_never_sends_the_request() {
         .mount(&server)
         .await;
 
-    waldur_cli::order::terminate(&server.uri(), Some("t"), "res1", None, true, true, 60, OutputFormat::Json)
+    waldur_cli::order::terminate(&server.uri(), Some("t"), "res1", None, true, true, 60, 3, OutputFormat::Json)
         .await
         .unwrap();
 }
@@ -318,7 +326,7 @@ async fn terminate_polls_to_completion() {
         .mount(&server)
         .await;
 
-    waldur_cli::order::terminate(&server.uri(), Some("t"), "res1", None, false, true, 60, OutputFormat::Json)
+    waldur_cli::order::terminate(&server.uri(), Some("t"), "res1", None, false, true, 60, 3, OutputFormat::Json)
         .await
         .unwrap();
 }
@@ -338,7 +346,7 @@ async fn terminate_no_wait_skips_polling() {
         .mount(&server)
         .await;
 
-    waldur_cli::order::terminate(&server.uri(), Some("t"), "res1", None, false, false, 60, OutputFormat::Json)
+    waldur_cli::order::terminate(&server.uri(), Some("t"), "res1", None, false, false, 60, 3, OutputFormat::Json)
         .await
         .unwrap();
 }

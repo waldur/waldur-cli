@@ -13,9 +13,6 @@ use std::time::{Duration, Instant};
 
 use crate::output::OutputFormat;
 
-/// How often to re-poll an in-flight order.
-const POLL_INTERVAL: Duration = Duration::from_secs(3);
-
 /// Columns for printing an order object under `--no-wait` (the order itself,
 /// not yet a provisioned resource).
 const ORDER_COLUMNS: &[&str] = &["uuid", "state", "resource_uuid", "error_message"];
@@ -37,6 +34,7 @@ pub async fn provision(
     dry_run: bool,
     wait: bool,
     timeout_secs: u64,
+    interval_secs: u64,
     format: OutputFormat,
 ) -> Result<()> {
     let body = apply_project(body, base_url, project)?;
@@ -58,7 +56,7 @@ pub async fn provision(
         return Ok(());
     }
 
-    poll_order(base_url, token, &order_uuid, timeout_secs, "Provisioning").await?;
+    poll_order(base_url, token, &order_uuid, timeout_secs, interval_secs, "Provisioning").await?;
     // Fetch the actual provisioned resource the order created.
     let resource = crate::http::call_one(
         base_url,
@@ -83,6 +81,7 @@ pub async fn terminate(
     dry_run: bool,
     wait: bool,
     timeout_secs: u64,
+    interval_secs: u64,
     format: OutputFormat,
 ) -> Result<()> {
     // The terminate action accepts an optional ResourceTerminateRequest body
@@ -122,7 +121,7 @@ pub async fn terminate(
         return Ok(());
     }
 
-    poll_order(base_url, token, &order_uuid, timeout_secs, "Terminating").await?;
+    poll_order(base_url, token, &order_uuid, timeout_secs, interval_secs, "Terminating").await?;
     match format {
         OutputFormat::Json | OutputFormat::Ndjson => {
             println!("{}", serde_json::json!({"terminated": true, "uuid": resource_uuid}))
@@ -176,10 +175,14 @@ async fn poll_order(
     token: Option<&str>,
     order_uuid: &str,
     timeout_secs: u64,
+    interval_secs: u64,
     label: &'static str,
 ) -> Result<serde_json::Value> {
     let start = Instant::now();
     let deadline = start + Duration::from_secs(timeout_secs);
+    // A 0 (or absurdly small) --interval would otherwise hammer the API once
+    // per spinner tick instead of once per poll.
+    let poll_interval = Duration::from_secs(interval_secs.max(1));
     let path = format!("/api/marketplace-orders/{order_uuid}/");
     let mut spinner = crate::progress::Spinner::new(label);
     loop {
@@ -214,9 +217,9 @@ async fn poll_order(
             );
         }
         // Animate the spinner between polls: tick every ~100ms so it stays
-        // lively, but only re-poll the order every POLL_INTERVAL (and never
+        // lively, but only re-poll the order every poll_interval (and never
         // past the deadline).
-        let next_poll = (Instant::now() + POLL_INTERVAL).min(deadline);
+        let next_poll = (Instant::now() + poll_interval).min(deadline);
         while Instant::now() < next_poll {
             spinner.tick(start.elapsed(), &last_state);
             tokio::time::sleep(Duration::from_millis(100)).await;
