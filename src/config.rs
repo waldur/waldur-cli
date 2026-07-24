@@ -139,6 +139,7 @@ pub fn delete_stored(profile: &str) -> Result<bool> {
     Ok(existed)
 }
 
+#[derive(Debug)]
 pub struct Config {
     pub api_url: String,
     pub token: Option<String>,

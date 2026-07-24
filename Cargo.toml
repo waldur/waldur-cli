@@ -39,6 +39,11 @@ self_update = { version = "0.44.0", default-features = false, features = ["rustl
 # distributed binary over build time or raw speed -- this CLI is I/O-bound
 # (network calls), so opt-level="z" and panic="abort" cost effectively
 # nothing at runtime in exchange for a meaningfully smaller download.
+[dev-dependencies]
+wiremock = "0.6"
+serial_test = "3"
+tempfile = "3"
+
 [profile.dist]
 inherits = "release"
 lto = "fat"

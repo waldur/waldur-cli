@@ -74,7 +74,7 @@ pub fn print_result<T: Serialize>(value: &T, columns: &[&str], format: OutputFor
 /// in `pagination::fetch_all_streaming` -- know to stop producing more
 /// output (and, for streaming, stop fetching further pages nobody will
 /// read) instead of panicking on the next `println!`.
-pub(crate) fn print_ndjson_line(value: &serde_json::Value) -> Result<bool> {
+pub fn print_ndjson_line(value: &serde_json::Value) -> Result<bool> {
     use std::io::Write;
     let line = serde_json::to_string(value)?;
     match writeln!(std::io::stdout(), "{line}") {

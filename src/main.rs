@@ -1,20 +1,8 @@
-mod cli;
-mod commands;
-mod config;
-mod filter;
-mod http;
-mod order;
-mod output;
-mod pagination;
-mod progress;
-mod query;
-mod request;
-mod schema;
-
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
-use output::OutputFormat;
+use waldur_cli::output::{self, OutputFormat};
+use waldur_cli::{cli, config, http, progress, schema};
 
 /// Scriptable CLI for Waldur MasterMind, covering OpenStack resource
 /// management and team/organization management. Generated command surface
