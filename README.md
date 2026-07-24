@@ -78,8 +78,8 @@ The full guide lives in [`docs/`](docs/):
    structure, and output formats
 2. [Querying resources](docs/2-querying-resources.md) — `list`/`get`, filtering, field
    selection, JMESPath, and streaming large lists with `--format ndjson`
-3. [Managing resources](docs/3-managing-resources.md) — `create`/`update`/`delete` and
-   request-body skeletons
+3. [Managing resources](docs/3-managing-resources.md) — `create`/`update`/`delete`,
+   request-body skeletons, and per-resource action verbs (start/stop/detach/approve/...)
 4. [Provisioning](docs/4-provisioning-openstack.md) — the marketplace order flow
    (`provision`/`terminate`), for OpenStack and any other offering type, plus the generic
    `wait` verb every resource gets

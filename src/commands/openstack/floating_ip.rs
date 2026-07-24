@@ -37,6 +37,12 @@ pub enum FloatingIpCommand {
     Delete(FloatingIpDeleteArgs),
     ///Wait for a --jmespath condition on openstack floating ips
     Wait(FloatingIpWaitArgs),
+    ///Detach from port openstack floating ips
+    DetachFromPort(FloatingIpDetachFromPortArgs),
+    ///Set ok openstack floating ips
+    SetOk(FloatingIpSetOkArgs),
+    ///Unlink openstack floating ips
+    Unlink(FloatingIpUnlinkArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct FloatingIpListArgs {
@@ -137,6 +143,18 @@ pub struct FloatingIpWaitArgs {
     /// Seconds between polls.
     #[arg(long, default_value_t = 3)]
     pub interval: u64,
+}
+#[derive(clap::Args, Debug)]
+pub struct FloatingIpDetachFromPortArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct FloatingIpSetOkArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct FloatingIpUnlinkArgs {
+    pub uuid: String,
 }
 pub async fn run(
     base_url: &str,
@@ -263,6 +281,57 @@ pub async fn run(
                     format,
                 )
                 .await?;
+        }
+        FloatingIpCommand::DetachFromPort(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-floating-ips/", args.uuid, "/detach_from_port/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        FloatingIpCommand::SetOk(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-floating-ips/", args.uuid, "/set_ok/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        FloatingIpCommand::Unlink(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-floating-ips/", args.uuid, "/unlink/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
     }
     Ok(())

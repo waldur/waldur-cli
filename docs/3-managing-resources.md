@@ -127,3 +127,25 @@ result either way.
     `get` returns 404); others soft-delete (the record stays retrievable with `is_removed:
     true`). And OpenStack tenants/instances/volumes are **not** deleted with `delete` at all
     — use [`terminate`](4-provisioning-openstack.md#terminating).
+
+## Action verbs
+
+Some resources have state-changing operations beyond plain `create`/`update`/`delete` — start
+a VM, detach a volume, approve a pending order. Where Waldur exposes these, the CLI generates
+a matching subcommand automatically, taking the resource's `<uuid>`:
+
+```bash
+waldur-cli openstack instance start <uuid>
+waldur-cli openstack instance stop <uuid>
+waldur-cli openstack instance restart <uuid>
+waldur-cli openstack volume detach <uuid>
+waldur-cli openstack floating-ip detach-from-port <uuid>
+waldur-cli marketplace order approve-by-consumer <uuid>
+waldur-cli marketplace order cancel <uuid>
+waldur-cli marketplace resource unlink <uuid>
+```
+
+Run `waldur-cli <group> <resource> --help` to see which action verbs a given resource has —
+the set varies by resource and isn't exhaustive: only bodyless POST actions are currently
+exposed (no read-only/GET actions, and none that take a request body). If an action you need
+is missing, it may still exist in Waldur's API but just isn't wired up yet.

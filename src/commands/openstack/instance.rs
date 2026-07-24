@@ -46,6 +46,18 @@ pub enum InstanceCommand {
     Terminate(InstanceTerminateArgs),
     ///Wait for a --jmespath condition on openstack instances (vms)
     Wait(InstanceWaitArgs),
+    ///Restart openstack instances (vms)
+    Restart(InstanceRestartArgs),
+    ///Set ok openstack instances (vms)
+    SetOk(InstanceSetOkArgs),
+    ///Start openstack instances (vms)
+    Start(InstanceStartArgs),
+    ///Stop openstack instances (vms)
+    Stop(InstanceStopArgs),
+    ///Unlink openstack instances (vms)
+    Unlink(InstanceUnlinkArgs),
+    ///Unrescue openstack instances (vms)
+    Unrescue(InstanceUnrescueArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceListArgs {
@@ -255,6 +267,30 @@ pub struct InstanceWaitArgs {
     #[arg(long, default_value_t = 3)]
     pub interval: u64,
 }
+#[derive(clap::Args, Debug)]
+pub struct InstanceRestartArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct InstanceSetOkArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct InstanceStartArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct InstanceStopArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct InstanceUnlinkArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct InstanceUnrescueArgs {
+    pub uuid: String,
+}
 pub async fn run(
     base_url: &str,
     token: Option<&str>,
@@ -410,6 +446,108 @@ pub async fn run(
                     format,
                 )
                 .await?;
+        }
+        InstanceCommand::Restart(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-instances/", args.uuid, "/restart/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        InstanceCommand::SetOk(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-instances/", args.uuid, "/set_ok/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        InstanceCommand::Start(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-instances/", args.uuid, "/start/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        InstanceCommand::Stop(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-instances/", args.uuid, "/stop/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        InstanceCommand::Unlink(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-instances/", args.uuid, "/unlink/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        InstanceCommand::Unrescue(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-instances/", args.uuid, "/unrescue/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
     }
     Ok(())

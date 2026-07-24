@@ -9,6 +9,20 @@ pub enum OrderCommand {
     Get(OrderGetArgs),
     ///Wait for a --jmespath condition on marketplace orders (check status of a submitted provision/terminate)
     Wait(OrderWaitArgs),
+    ///Approve by consumer marketplace orders (check status of a submitted provision/terminate)
+    ApproveByConsumer(OrderApproveByConsumerArgs),
+    ///Cancel marketplace orders (check status of a submitted provision/terminate)
+    Cancel(OrderCancelArgs),
+    ///Delete attachment marketplace orders (check status of a submitted provision/terminate)
+    DeleteAttachment(OrderDeleteAttachmentArgs),
+    ///Retry marketplace orders (check status of a submitted provision/terminate)
+    Retry(OrderRetryArgs),
+    ///Set state done marketplace orders (check status of a submitted provision/terminate)
+    SetStateDone(OrderSetStateDoneArgs),
+    ///Set state executing marketplace orders (check status of a submitted provision/terminate)
+    SetStateExecuting(OrderSetStateExecutingArgs),
+    ///Unlink marketplace orders (check status of a submitted provision/terminate)
+    Unlink(OrderUnlinkArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderGetArgs {
@@ -30,11 +44,39 @@ pub struct OrderWaitArgs {
     #[arg(long, default_value_t = 3)]
     pub interval: u64,
 }
+#[derive(clap::Args, Debug)]
+pub struct OrderApproveByConsumerArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct OrderCancelArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct OrderDeleteAttachmentArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct OrderRetryArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct OrderSetStateDoneArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct OrderSetStateExecutingArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct OrderUnlinkArgs {
+    pub uuid: String,
+}
 pub async fn run(
     base_url: &str,
     token: Option<&str>,
     _project: Option<&str>,
-    _dry_run: bool,
+    dry_run: bool,
     command: OrderCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -64,6 +106,125 @@ pub async fn run(
                     format,
                 )
                 .await?;
+        }
+        OrderCommand::ApproveByConsumer(args) => {
+            let path = format!(
+                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/approve_by_consumer/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        OrderCommand::Cancel(args) => {
+            let path = format!(
+                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/cancel/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        OrderCommand::DeleteAttachment(args) => {
+            let path = format!(
+                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/delete_attachment/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        OrderCommand::Retry(args) => {
+            let path = format!(
+                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/retry/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        OrderCommand::SetStateDone(args) => {
+            let path = format!(
+                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/set_state_done/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        OrderCommand::SetStateExecuting(args) => {
+            let path = format!(
+                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/set_state_executing/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        OrderCommand::Unlink(args) => {
+            let path = format!(
+                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/unlink/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
     }
     Ok(())

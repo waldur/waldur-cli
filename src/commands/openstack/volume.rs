@@ -49,6 +49,12 @@ pub enum VolumeCommand {
     Terminate(VolumeTerminateArgs),
     ///Wait for a --jmespath condition on openstack volumes
     Wait(VolumeWaitArgs),
+    ///Detach openstack volumes
+    Detach(VolumeDetachArgs),
+    ///Set ok openstack volumes
+    SetOk(VolumeSetOkArgs),
+    ///Unlink openstack volumes
+    Unlink(VolumeUnlinkArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct VolumeListArgs {
@@ -245,6 +251,18 @@ pub struct VolumeWaitArgs {
     #[arg(long, default_value_t = 3)]
     pub interval: u64,
 }
+#[derive(clap::Args, Debug)]
+pub struct VolumeDetachArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct VolumeSetOkArgs {
+    pub uuid: String,
+}
+#[derive(clap::Args, Debug)]
+pub struct VolumeUnlinkArgs {
+    pub uuid: String,
+}
 pub async fn run(
     base_url: &str,
     token: Option<&str>,
@@ -400,6 +418,57 @@ pub async fn run(
                     format,
                 )
                 .await?;
+        }
+        VolumeCommand::Detach(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-volumes/", args.uuid, "/detach/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        VolumeCommand::SetOk(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-volumes/", args.uuid, "/set_ok/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        VolumeCommand::Unlink(args) => {
+            let path = format!(
+                "{}{}{}", "/api/openstack-volumes/", args.uuid, "/unlink/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, None, format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    None,
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
     }
     Ok(())
