@@ -154,24 +154,38 @@ pub async fn run(
                     }
                 }
             }
-            let result = crate::pagination::fetch_all(
-                    base_url,
-                    token,
-                    "/api/openstack-floating-ips/",
-                    &query_params,
-                    args.limit,
-                )
-                .await?;
-            let display_columns: Vec<&str> = match &args.fields {
-                Some(fields) => fields.iter().map(String::as_str).collect(),
-                None => COLUMNS.to_vec(),
-            };
-            let result: serde_json::Value = serde_json::Value::Array(result);
-            let result = match &args.jmespath {
-                Some(expr) => crate::query::apply(result, expr)?,
-                None => result,
-            };
-            crate::output::print_result(&result, &display_columns, format)?;
+            if matches!(format, crate ::output::OutputFormat::Ndjson)
+                && args.jmespath.is_none()
+            {
+                crate::pagination::fetch_all_streaming(
+                        base_url,
+                        token,
+                        "/api/openstack-floating-ips/",
+                        &query_params,
+                        args.limit,
+                        |item| crate::output::print_ndjson_line(&item),
+                    )
+                    .await?;
+            } else {
+                let result = crate::pagination::fetch_all(
+                        base_url,
+                        token,
+                        "/api/openstack-floating-ips/",
+                        &query_params,
+                        args.limit,
+                    )
+                    .await?;
+                let display_columns: Vec<&str> = match &args.fields {
+                    Some(fields) => fields.iter().map(String::as_str).collect(),
+                    None => COLUMNS.to_vec(),
+                };
+                let result: serde_json::Value = serde_json::Value::Array(result);
+                let result = match &args.jmespath {
+                    Some(expr) => crate::query::apply(result, expr)?,
+                    None => result,
+                };
+                crate::output::print_result(&result, &display_columns, format)?;
+            }
         }
         FloatingIpCommand::Get(args) => {
             let path = format!("{}{}{}", "/api/openstack-floating-ips/", args.uuid, "/");
@@ -199,7 +213,8 @@ pub async fn run(
                 )
                 .await?;
             match format {
-                crate::output::OutputFormat::Json => {
+                crate::output::OutputFormat::Json
+                | crate::output::OutputFormat::Ndjson => {
                     println!(
                         "{}", serde_json::json!({ "deleted" : true, "uuid" : args.uuid })
                     );

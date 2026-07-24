@@ -19,6 +19,14 @@ pub enum OutputFormat {
     /// repeated per row. Unlike table/tsv this is NOT limited to `columns`;
     /// it serializes the complete result.
     Toon,
+    /// Newline-delimited JSON: one compact JSON object per line, like json
+    /// but streamed. On `list`, results are printed as each page arrives
+    /// instead of buffering the complete result set first -- lower memory,
+    /// and a consumer (`jq`, a pipe, an agent) can start processing before
+    /// the fetch finishes. Falls back to buffer-then-print (still one
+    /// object per line) when combined with `--jmespath`, which needs the
+    /// complete result to reshape.
+    Ndjson,
 }
 
 /// Print a single object or a list of objects, either as a table (using
@@ -39,8 +47,42 @@ pub fn print_result<T: Serialize>(value: &T, columns: &[&str], format: OutputFor
         // curated for human/shell scanning, but toon (like json) is meant
         // to be a complete, lossless representation an agent can rely on.
         OutputFormat::Toon => println!("{}", serde_toon::to_string(&json)?),
+        // Reached for get/create/update/delete (a single object -- one
+        // line), and for `list --jmespath` (the streaming fast path in
+        // codegen only applies without --jmespath, since a JMESPath
+        // expression can reshape/aggregate across the whole array and so
+        // needs it fully fetched first). Either way, `list`'s own
+        // buffer-then-stream call site never reaches this arm.
+        OutputFormat::Ndjson => match &json {
+            serde_json::Value::Array(items) => {
+                for item in items {
+                    if !print_ndjson_line(item)? {
+                        break; // downstream reader (e.g. `| head`) hung up
+                    }
+                }
+            }
+            other => {
+                print_ndjson_line(other)?;
+            }
+        },
     }
     Ok(())
+}
+
+/// Prints one compact-JSON NDJSON line to stdout. Returns `Ok(false)`
+/// (not an error) if the downstream reader has closed the pipe (e.g.
+/// `| head`), so callers -- especially the page-at-a-time streaming loop
+/// in `pagination::fetch_all_streaming` -- know to stop producing more
+/// output (and, for streaming, stop fetching further pages nobody will
+/// read) instead of panicking on the next `println!`.
+pub(crate) fn print_ndjson_line(value: &serde_json::Value) -> Result<bool> {
+    use std::io::Write;
+    let line = serde_json::to_string(value)?;
+    match writeln!(std::io::stdout(), "{line}") {
+        Ok(()) => Ok(true),
+        Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => Ok(false),
+        Err(e) => Err(e.into()),
+    }
 }
 
 /// Prints the request a mutating command *would* send under `--dry-run`,
@@ -73,6 +115,12 @@ pub fn print_dry_run(
                 "dry_run": true, "method": method, "path": path, "body": body_value,
             });
             println!("{}", serde_toon::to_string(&obj)?);
+        }
+        OutputFormat::Ndjson => {
+            let obj = serde_json::json!({
+                "dry_run": true, "method": method, "path": path, "body": body_value,
+            });
+            print_ndjson_line(&obj)?;
         }
         OutputFormat::Table => {
             println!("DRY RUN -- would send: {method} {path}");

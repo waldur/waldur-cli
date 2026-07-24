@@ -124,7 +124,9 @@ pub async fn terminate(
 
     poll_order(base_url, token, &order_uuid, timeout_secs, "Terminating").await?;
     match format {
-        OutputFormat::Json => println!("{}", serde_json::json!({"terminated": true, "uuid": resource_uuid})),
+        OutputFormat::Json | OutputFormat::Ndjson => {
+            println!("{}", serde_json::json!({"terminated": true, "uuid": resource_uuid}))
+        }
         OutputFormat::Table => println!("Terminated {resource_uuid}"),
         OutputFormat::Tsv => println!("true\t{resource_uuid}"),
         OutputFormat::Toon => println!(

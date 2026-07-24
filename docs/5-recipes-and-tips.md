@@ -100,6 +100,11 @@ waldur-cli openstack instance list \
 - **`--fields` speeds up big lists.** For a resource with large objects, `--fields uuid,name`
   can dramatically cut transfer time — the server sends only what you ask for.
 
+- **`--format ndjson` for big lists.** It streams -- printing each page as it arrives -- so a
+  large `list` starts producing output immediately instead of going quiet until every page is
+  fetched. Pipes straight into `jq -c`, a shell `while read` loop, or an agent processing
+  results incrementally.
+
 - **`--filter query=<text>` is full-text search.** On resources that support it (customers,
   projects, users, …), the `query` filter searches across fields, unlike the exact-match
   field filters.

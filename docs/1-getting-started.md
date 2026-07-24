@@ -140,18 +140,20 @@ list, or a `project` field in a `provision`/order body, overrides the ambient sc
 `--format` controls how results are rendered. It's available on every command; the default
 is `table`.
 
-| Format  | Best for                        | Notes                                                      |
-| ------- | ------------------------------- | ---------------------------------------------------------- |
-| `table` | reading at a terminal (default) | curated columns per resource                               |
-| `json`  | scripts, `jq`, agents           | pretty-printed, the complete object                        |
-| `tsv`   | shell loops, `cut`/`awk`        | tab-separated, one row per line, no header, curated columns |
-| `toon`  | feeding results to an LLM       | lossless like json, far fewer tokens                       |
+| Format   | Best for                        | Notes                                                        |
+| -------- | -------------------------------- | ------------------------------------------------------------ |
+| `table`  | reading at a terminal (default)  | curated columns per resource                                  |
+| `json`   | scripts, `jq`, agents            | pretty-printed, the complete object                          |
+| `tsv`    | shell loops, `cut`/`awk`         | tab-separated, one row per line, no header, curated columns  |
+| `toon`   | feeding results to an LLM        | lossless like json, far fewer tokens                          |
+| `ndjson` | large `list`s, streaming pipes   | one compact object per line, printed as pages arrive          |
 
 ```bash
 waldur-cli team customer list                    # table
 waldur-cli team customer list --format json      # complete objects, pretty JSON
 waldur-cli team customer list --format tsv        # tab-separated rows
 waldur-cli team customer list --format toon       # token-efficient, for LLM context
+waldur-cli team customer list --format ndjson     # streamed, one object per line
 ```
 
 `table` and `tsv` show each resource's **curated columns** (a useful default subset). `json`
@@ -173,3 +175,10 @@ waldur-cli team customer list --format toon
 #   true,Beta LLC,"22222222-2222-2222-2222-222222222222"
 #   false,Gamma Inc,"33333333-3333-3333-3333-333333333333"
 ```
+
+### NDJSON, for large or streamed lists
+
+`--format ndjson` prints one compact JSON object per line instead of one pretty-printed array —
+and, for `list`, prints each page as it arrives rather than fetching the complete result set
+first. See [Querying resources](2-querying-resources.md#streaming-large-lists) for the streaming
+details and its one caveat (`--jmespath`).

@@ -72,24 +72,38 @@ pub async fn run(
                     }
                 }
             }
-            let result = crate::pagination::fetch_all(
-                    base_url,
-                    token,
-                    "/api/customer-permissions-reviews/",
-                    &query_params,
-                    args.limit,
-                )
-                .await?;
-            let display_columns: Vec<&str> = match &args.fields {
-                Some(fields) => fields.iter().map(String::as_str).collect(),
-                None => COLUMNS.to_vec(),
-            };
-            let result: serde_json::Value = serde_json::Value::Array(result);
-            let result = match &args.jmespath {
-                Some(expr) => crate::query::apply(result, expr)?,
-                None => result,
-            };
-            crate::output::print_result(&result, &display_columns, format)?;
+            if matches!(format, crate ::output::OutputFormat::Ndjson)
+                && args.jmespath.is_none()
+            {
+                crate::pagination::fetch_all_streaming(
+                        base_url,
+                        token,
+                        "/api/customer-permissions-reviews/",
+                        &query_params,
+                        args.limit,
+                        |item| crate::output::print_ndjson_line(&item),
+                    )
+                    .await?;
+            } else {
+                let result = crate::pagination::fetch_all(
+                        base_url,
+                        token,
+                        "/api/customer-permissions-reviews/",
+                        &query_params,
+                        args.limit,
+                    )
+                    .await?;
+                let display_columns: Vec<&str> = match &args.fields {
+                    Some(fields) => fields.iter().map(String::as_str).collect(),
+                    None => COLUMNS.to_vec(),
+                };
+                let result: serde_json::Value = serde_json::Value::Array(result);
+                let result = match &args.jmespath {
+                    Some(expr) => crate::query::apply(result, expr)?,
+                    None => result,
+                };
+                crate::output::print_result(&result, &display_columns, format)?;
+            }
         }
         CustomerPermissionsReviewCommand::Get(args) => {
             let path = format!(

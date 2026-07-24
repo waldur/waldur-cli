@@ -40,20 +40,9 @@ pub(crate) fn build_client() -> ClientWithMiddleware {
 }
 
 /// Fetches every page of `path` (a list endpoint), merging them into one
-/// JSON array. `query_params` should contain every filter the caller asked
-/// for except page/page_size, which this function controls itself.
-///
-/// `limit`, if given, stops once that many items have been collected
-/// (truncating the last page if it overshoots) -- both to bound how long a
-/// huge list takes/how much memory it uses, and to bound the damage if a
-/// page fails partway through a very long fetch (better to ask for only
-/// what's actually needed than to redo hundreds of requests after a
-/// late-page failure). A failure always surfaces as an error either way
-/// (never silently returns a partial list as if it were complete -- that
-/// would reintroduce exactly the "looks complete but isn't" problem
-/// auto-pagination exists to avoid), but the error message reports how much
-/// had been fetched so far, so a real partial-progress failure is
-/// distinguishable from "found nothing" or an immediate connection error.
+/// JSON array. A thin buffering wrapper over `fetch_all_streaming` -- see
+/// that function for the pagination/limit/error semantics, which apply
+/// unchanged here.
 pub async fn fetch_all(
     base_url: &str,
     token: Option<&str>,
@@ -61,14 +50,54 @@ pub async fn fetch_all(
     query_params: &[(String, String)],
     limit: Option<i64>,
 ) -> Result<Vec<serde_json::Value>> {
+    let mut items = Vec::new();
+    fetch_all_streaming(base_url, token, path, query_params, limit, |item| {
+        items.push(item);
+        Ok(true)
+    })
+    .await?;
+    Ok(items)
+}
+
+/// Fetches every page of `path` (a list endpoint), calling `on_item` for
+/// each item as its page arrives rather than buffering the complete result
+/// set first -- what `--format ndjson` uses for `list` to start printing
+/// after the first page instead of waiting for all of them. `query_params`
+/// should contain every filter the caller asked for except page/page_size,
+/// which this function controls itself.
+///
+/// `on_item` returns whether to keep going: `Ok(true)` continues, `Ok(false)`
+/// stops immediately (used to stop fetching further pages once a downstream
+/// reader has hung up, e.g. `| head` -- no point paying for requests nobody
+/// will read), `Err` propagates as this function's own error.
+///
+/// `limit`, if given, stops once that many items have been emitted (never
+/// emitting past it, even if the last page fetched overshoots) -- both to
+/// bound how long a huge list takes/how much memory it uses, and to bound
+/// the damage if a page fails partway through a very long fetch (better to
+/// ask for only what's actually needed than to redo hundreds of requests
+/// after a late-page failure). A failure always surfaces as an error either
+/// way (never silently stops as if the result were complete -- that would
+/// reintroduce exactly the "looks complete but isn't" problem
+/// auto-pagination exists to avoid), but the error message reports how much
+/// had been emitted so far, so a real partial-progress failure is
+/// distinguishable from "found nothing" or an immediate connection error.
+pub async fn fetch_all_streaming(
+    base_url: &str,
+    token: Option<&str>,
+    path: &str,
+    query_params: &[(String, String)],
+    limit: Option<i64>,
+    mut on_item: impl FnMut(serde_json::Value) -> Result<bool>,
+) -> Result<()> {
     if let Some(limit) = limit {
         if limit <= 0 {
-            return Ok(Vec::new());
+            return Ok(());
         }
     }
 
     let client = build_client();
-    let mut all_items = Vec::new();
+    let mut sent: i64 = 0;
     let mut page = 1i64;
     let mut total: Option<i64> = None;
     // Don't request a full 300-item page just to immediately truncate it
@@ -85,18 +114,15 @@ pub async fn fetch_all(
             req = req.header("Authorization", format!("Token {token}"));
         }
         let response = req.send().await.with_context(|| {
-            format!(
-                "pagination request failed on page {page} (fetched {} item(s) before this)",
-                all_items.len()
-            )
+            format!("pagination request failed on page {page} (fetched {sent} item(s) before this)")
         })?;
         let status = response.status();
 
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
             let progress = match total {
-                Some(total) => format!("{} of {total}", all_items.len()),
-                None => all_items.len().to_string(),
+                Some(total) => format!("{sent} of {total}"),
+                None => sent.to_string(),
             };
             bail!("API error {status} on page {page} (fetched {progress} item(s) before this failed): {body}");
         }
@@ -113,29 +139,33 @@ pub async fn fetch_all(
         // from_str rather than reqwest's `.json()`, so we don't need
         // reqwest's "json" feature enabled just for this one call site.
         let body_text = response.text().await.with_context(|| {
-            format!(
-                "failed to read page {page} body (fetched {} item(s) before this)",
-                all_items.len()
-            )
+            format!("failed to read page {page} body (fetched {sent} item(s) before this)")
         })?;
         let items: Vec<serde_json::Value> = serde_json::from_str(&body_text).with_context(|| {
-            format!(
-                "failed to parse page {page} body (fetched {} item(s) before this)",
-                all_items.len()
-            )
+            format!("failed to parse page {page} body (fetched {sent} item(s) before this)")
         })?;
         let got = items.len() as i64;
-        all_items.extend(items);
+
+        for item in items {
+            if let Some(limit) = limit {
+                if sent >= limit {
+                    break;
+                }
+            }
+            if !on_item(item)? {
+                return Ok(());
+            }
+            sent += 1;
+        }
 
         if let Some(limit) = limit {
-            if (all_items.len() as i64) >= limit {
-                all_items.truncate(limit as usize);
+            if sent >= limit {
                 break;
             }
         }
 
         let done = match total {
-            Some(total) => (all_items.len() as i64) >= total,
+            Some(total) => sent >= total,
             // Shouldn't happen against a real Waldur instance -- every list
             // endpoint uses LinkHeaderPagination by default -- but fall back
             // to stopping once a page comes back short of what was asked
@@ -149,13 +179,12 @@ pub async fn fetch_all(
         page += 1;
         if page > MAX_PAGES {
             bail!(
-                "stopped after {MAX_PAGES} pages ({} items) without reaching the reported \
+                "stopped after {MAX_PAGES} pages ({sent} items) without reaching the reported \
                  total ({total:?}) -- this looks like a server or client bug rather than a \
-                 real result set",
-                all_items.len()
+                 real result set"
             );
         }
     }
 
-    Ok(all_items)
+    Ok(())
 }

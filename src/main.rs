@@ -183,7 +183,9 @@ async fn whoami(client: &HttpClient, format: OutputFormat) -> anyhow::Result<()>
 /// regardless of format, so stdout stays clean on the success path only.
 fn print_error(err: &anyhow::Error, format: OutputFormat) {
     match format {
-        OutputFormat::Json => {
+        // Ndjson's errors are one compact object same as json's -- ndjson
+        // only changes success-path streaming, not the error shape.
+        OutputFormat::Json | OutputFormat::Ndjson => {
             eprintln!("{}", serde_json::json!({ "error": format!("{err:#}") }))
         }
         // Toon is a full/lossless structured format like json (not a
