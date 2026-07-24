@@ -106,6 +106,8 @@ enum Commands {
         #[arg(long)]
         compact: bool,
     },
+    /// Update waldur-cli to the latest version published on GitHub
+    Update,
 }
 
 /// Same column set `team user get` uses -- whoami is conceptually that,
@@ -285,6 +287,9 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::Schema { group, compact } => {
             return print_schema(group.as_deref(), compact, cli.format);
         }
+        Commands::Update => {
+            return tokio::task::spawn_blocking(run_update).await?;
+        }
         Commands::Group(cmd) => *cmd,
     };
 
@@ -390,6 +395,33 @@ fn print_schema(group: Option<&str>, compact: bool, format: OutputFormat) -> any
         // json / table / tsv all get pretty JSON — table and tsv have no
         // meaningful columnar representation for a nested schema object.
         _ => println!("{}", serde_json::to_string_pretty(&value)?),
+    }
+
+    Ok(())
+}
+
+/// Self-update using GitHub releases. Needs `unix-archive = ".tar.gz"` in
+/// dist-workspace.toml since self_update doesn't natively support cargo-dist's
+/// default .tar.xz
+fn run_update() -> anyhow::Result<()> {
+    println!("Checking for updates...");
+
+    let status = self_update::backends::github::Update::configure()
+        .repo_owner("waldur")
+        .repo_name("waldur-cli")
+        .bin_name("waldur-cli")
+        .show_download_progress(true)
+        .current_version(self_update::cargo_crate_version!())
+        .build()?
+        .update()?;
+
+    if status.updated() {
+        println!(
+            "Successfully updated waldur-cli to version {}",
+            status.version()
+        );
+    } else {
+        println!("waldur-cli is already up-to-date (version {}).", status.version());
     }
 
     Ok(())

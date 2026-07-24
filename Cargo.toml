@@ -30,6 +30,7 @@ serde_yaml = "0.9"
 tokio = { version = "1", features = ["rt", "macros", "time"] }
 toml = "0.8"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }
+self_update = { version = "0.44.0", default-features = false, features = ["rustls", "archive-tar", "archive-zip", "compression-flate2", "reqwest"] }
 
 # The profile that 'dist' will build with. Optimized for a small
 # distributed binary over build time or raw speed -- this CLI is I/O-bound
