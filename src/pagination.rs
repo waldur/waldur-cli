@@ -1,23 +1,13 @@
 //! Hand-written: auto-fetches every page of a `list` endpoint.
 //!
-//! rs-client's generated methods discard response headers before returning
-//! (confirmed by reading openapi-to-rust's own codegen: it captures headers
-//! only to attach to error messages, then does `let _ = headers;` on the
-//! success path -- even for the dedicated `_count` HEAD actions whose whole
-//! purpose is exposing a count header, which come back as `Result<(), _>`).
-//! There's no way to learn the total result count or "is there a next page"
-//! through the generated, typed interface. So `list` commands (see
-//! waldur-cli-generator's codegen, the `is_list` branch of
-//! `generate_resource_module`) bypass the generated method for this one
-//! purpose and call the same REST endpoint directly here instead, reading
-//! Waldur's pagination header (`X-Result-Count`, emitted by
-//! `waldur_core.core.pagination.LinkHeaderPagination`, the default
-//! pagination class for every list endpoint) to know when the complete
-//! result set has been fetched.
-//!
-//! Mirrors rs-client's own `HttpClient::with_config(true)` construction
-//! (reqwest + reqwest-middleware + reqwest-tracing) so `--debug` tracing
-//! still covers these requests.
+//! Separate from `http.rs`'s single-request `call_one` because pagination is
+//! genuinely list-specific: it reads Waldur's pagination header
+//! (`X-Result-Count`, emitted by `waldur_core.core.pagination.
+//! LinkHeaderPagination`, the default pagination class for every list
+//! endpoint) across as many page requests as it takes to know when the
+//! complete result set has been fetched -- a loop with its own state
+//! (`page`, `total`, accumulated/streamed items) that `call_one`'s one
+//! request/one response shape has no need for.
 
 use anyhow::{bail, Context, Result};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};

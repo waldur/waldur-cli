@@ -34,7 +34,9 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("user_uuid_with_active_role", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"affiliation_uuid\": null,\n  \"backend_id\": null,\n  \"customer\": \"\",\n  \"description\": null,\n  \"end_date\": null,\n  \"grace_period_days\": null,\n  \"image\": null,\n  \"is_industry\": null,\n  \"kind\": null,\n  \"name\": \"\",\n  \"oecd_fos_2007_code\": null,\n  \"science_sub_domain\": null,\n  \"slug\": null,\n  \"staff_notes\": null,\n  \"start_date\": null,\n  \"type\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"affiliation_uuid\":{\"format\":\"uuid\",\"type\":\"string\"},\"backend_id\":{\"type\":\"string\"},\"customer\":{\"format\":\"uri\",\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"end_date\":{\"format\":\"date\",\"type\":\"string\"},\"grace_period_days\":{\"type\":\"integer\"},\"image\":{\"format\":\"binary\",\"type\":\"string\"},\"is_industry\":{\"type\":\"boolean\"},\"kind\":{\"allOf\":[{\"enum\":[\"default\",\"course\",\"public\"]}]},\"name\":{\"type\":\"string\"},\"oecd_fos_2007_code\":{\"oneOf\":[{\"enum\":[\"1.1\",\"1.2\",\"1.3\",\"1.4\",\"1.5\",\"1.6\",\"1.7\",\"2.1\",\"2.2\",\"2.3\",\"2.4\",\"2.5\",\"2.6\",\"2.7\",\"2.8\",\"2.9\",\"2.10\",\"2.11\",\"2.12\",\"3.1\",\"3.2\",\"3.3\",\"3.4\",\"3.5\",\"4.1\",\"4.2\",\"4.3\",\"4.4\",\"4.5\",\"5.1\",\"5.2\",\"5.3\",\"5.4\",\"5.5\",\"5.6\",\"5.7\",\"5.8\",\"5.9\",\"6.1\",\"6.2\",\"6.3\",\"6.4\",\"6.5\"]},{\"enum\":[\"\"]},{\"enum\":[\"null\"]}]},\"science_sub_domain\":{\"format\":\"uuid\",\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"staff_notes\":{\"type\":\"string\"},\"start_date\":{\"format\":\"date\",\"type\":\"string\"},\"type\":{\"format\":\"uri\",\"type\":\"string\"},\"user_affiliations\":{\"type\":\"object\"},\"user_email_patterns\":{\"type\":\"object\"},\"user_identity_sources\":{\"type\":\"object\"}},\"required\":[\"customer\",\"name\"],\"type\":\"object\"}";
 const UPDATE_SKELETON: &str = "{\n  \"affiliation_uuid\": null,\n  \"backend_id\": null,\n  \"customer\": \"\",\n  \"description\": null,\n  \"end_date\": null,\n  \"grace_period_days\": null,\n  \"image\": null,\n  \"is_industry\": null,\n  \"kind\": null,\n  \"name\": \"\",\n  \"oecd_fos_2007_code\": null,\n  \"science_sub_domain\": null,\n  \"slug\": null,\n  \"staff_notes\": null,\n  \"start_date\": null,\n  \"type\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"affiliation_uuid\":{\"format\":\"uuid\",\"type\":\"string\"},\"backend_id\":{\"type\":\"string\"},\"customer\":{\"format\":\"uri\",\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"end_date\":{\"format\":\"date\",\"type\":\"string\"},\"grace_period_days\":{\"type\":\"integer\"},\"image\":{\"format\":\"binary\",\"type\":\"string\"},\"is_industry\":{\"type\":\"boolean\"},\"kind\":{\"allOf\":[{\"enum\":[\"default\",\"course\",\"public\"]}]},\"name\":{\"type\":\"string\"},\"oecd_fos_2007_code\":{\"oneOf\":[{\"enum\":[\"1.1\",\"1.2\",\"1.3\",\"1.4\",\"1.5\",\"1.6\",\"1.7\",\"2.1\",\"2.2\",\"2.3\",\"2.4\",\"2.5\",\"2.6\",\"2.7\",\"2.8\",\"2.9\",\"2.10\",\"2.11\",\"2.12\",\"3.1\",\"3.2\",\"3.3\",\"3.4\",\"3.5\",\"4.1\",\"4.2\",\"4.3\",\"4.4\",\"4.5\",\"5.1\",\"5.2\",\"5.3\",\"5.4\",\"5.5\",\"5.6\",\"5.7\",\"5.8\",\"5.9\",\"6.1\",\"6.2\",\"6.3\",\"6.4\",\"6.5\"]},{\"enum\":[\"\"]},{\"enum\":[\"null\"]}]},\"science_sub_domain\":{\"format\":\"uuid\",\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"staff_notes\":{\"type\":\"string\"},\"start_date\":{\"format\":\"date\",\"type\":\"string\"},\"type\":{\"format\":\"uri\",\"type\":\"string\"},\"user_affiliations\":{\"type\":\"object\"},\"user_email_patterns\":{\"type\":\"object\"},\"user_identity_sources\":{\"type\":\"object\"}},\"required\":[\"customer\",\"name\"],\"type\":\"object\"}";
 ///Projects
 #[derive(clap::Subcommand, Debug)]
 pub enum ProjectCommand {
@@ -194,7 +196,6 @@ pub struct ProjectDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     _project: Option<&str>,
@@ -276,11 +277,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::ProjectRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(CREATE_REQUEST_SCHEMA, &body)?;
             let path = "/api/projects/".to_string();
             if dry_run {
                 return crate::output::print_dry_run("POST", &path, Some(&body), format);
@@ -304,11 +301,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::ProjectRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

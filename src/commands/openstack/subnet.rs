@@ -31,6 +31,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];
 const UPDATE_SKELETON: &str = "{\n  \"allocation_pools\": null,\n  \"cidr\": null,\n  \"description\": null,\n  \"disable_gateway\": null,\n  \"dns_nameservers\": null,\n  \"gateway_ip\": null,\n  \"host_routes\": null,\n  \"name\": \"\"\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"allocation_pools\":{\"items\":{\"properties\":{\"end\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"start\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"end\",\"start\"],\"type\":\"object\"},\"type\":\"array\"},\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"disable_gateway\":{\"type\":\"boolean\"},\"dns_nameservers\":{\"items\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"type\":\"array\"},\"gateway_ip\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"host_routes\":{\"items\":{\"properties\":{\"destination\":{\"type\":\"string\"},\"nexthop\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"destination\",\"nexthop\"],\"type\":\"object\"},\"type\":\"array\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 ///OpenStack subnets
 #[derive(clap::Subcommand, Debug)]
 pub enum SubnetCommand {
@@ -158,7 +159,6 @@ pub struct SubnetDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
@@ -245,11 +245,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::OpenStackSubNetRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

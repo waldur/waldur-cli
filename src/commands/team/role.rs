@@ -9,7 +9,9 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("name", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"content_type\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"description_ar\":{\"type\":\"string\"},\"description_cs\":{\"type\":\"string\"},\"description_da\":{\"type\":\"string\"},\"description_de\":{\"type\":\"string\"},\"description_en\":{\"type\":\"string\"},\"description_es\":{\"type\":\"string\"},\"description_et\":{\"type\":\"string\"},\"description_fr\":{\"type\":\"string\"},\"description_it\":{\"type\":\"string\"},\"description_lt\":{\"type\":\"string\"},\"description_lv\":{\"type\":\"string\"},\"description_nb\":{\"type\":\"string\"},\"description_ru\":{\"type\":\"string\"},\"description_sv\":{\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"name\":{\"type\":\"string\"},\"permissions\":{\"type\":\"object\"}},\"required\":[\"content_type\",\"name\",\"permissions\"],\"type\":\"object\"}";
 const UPDATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"content_type\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"description_ar\":{\"type\":\"string\"},\"description_cs\":{\"type\":\"string\"},\"description_da\":{\"type\":\"string\"},\"description_de\":{\"type\":\"string\"},\"description_en\":{\"type\":\"string\"},\"description_es\":{\"type\":\"string\"},\"description_et\":{\"type\":\"string\"},\"description_fr\":{\"type\":\"string\"},\"description_it\":{\"type\":\"string\"},\"description_lt\":{\"type\":\"string\"},\"description_lv\":{\"type\":\"string\"},\"description_nb\":{\"type\":\"string\"},\"description_ru\":{\"type\":\"string\"},\"description_sv\":{\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"name\":{\"type\":\"string\"},\"permissions\":{\"type\":\"object\"}},\"required\":[\"content_type\",\"name\",\"permissions\"],\"type\":\"object\"}";
 ///Roles
 #[derive(clap::Subcommand, Debug)]
 pub enum RoleCommand {
@@ -139,7 +141,6 @@ pub struct RoleDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     _project: Option<&str>,
@@ -221,11 +222,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::RoleModifyRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(CREATE_REQUEST_SCHEMA, &body)?;
             let path = "/api/roles/".to_string();
             if dry_run {
                 return crate::output::print_dry_run("POST", &path, Some(&body), format);
@@ -249,11 +246,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::RoleModifyRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

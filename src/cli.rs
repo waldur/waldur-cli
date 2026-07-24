@@ -86,7 +86,6 @@ pub enum MarketplaceCommand {
     Resource(crate::commands::marketplace::resource::ResourceCommand),
 }
 pub async fn dispatch(
-    client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
@@ -99,7 +98,6 @@ pub async fn dispatch(
             match cmd {
                 OpenstackCommand::Tenant(cmd) => {
                     crate::commands::openstack::tenant::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -111,7 +109,6 @@ pub async fn dispatch(
                 }
                 OpenstackCommand::Instance(cmd) => {
                     crate::commands::openstack::instance::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -123,7 +120,6 @@ pub async fn dispatch(
                 }
                 OpenstackCommand::Volume(cmd) => {
                     crate::commands::openstack::volume::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -135,7 +131,6 @@ pub async fn dispatch(
                 }
                 OpenstackCommand::Network(cmd) => {
                     crate::commands::openstack::network::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -147,7 +142,6 @@ pub async fn dispatch(
                 }
                 OpenstackCommand::Subnet(cmd) => {
                     crate::commands::openstack::subnet::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -159,7 +153,6 @@ pub async fn dispatch(
                 }
                 OpenstackCommand::SecurityGroup(cmd) => {
                     crate::commands::openstack::security_group::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -171,7 +164,6 @@ pub async fn dispatch(
                 }
                 OpenstackCommand::FloatingIp(cmd) => {
                     crate::commands::openstack::floating_ip::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -187,7 +179,6 @@ pub async fn dispatch(
             match cmd {
                 TeamCommand::Customer(cmd) => {
                     crate::commands::team::customer::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -199,7 +190,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::Project(cmd) => {
                     crate::commands::team::project::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -211,7 +201,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::User(cmd) => {
                     crate::commands::team::user::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -223,7 +212,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::Role(cmd) => {
                     crate::commands::team::role::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -235,7 +223,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::UserInvitation(cmd) => {
                     crate::commands::team::user_invitation::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -247,7 +234,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::OrganizationGroup(cmd) => {
                     crate::commands::team::organization_group::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -259,7 +245,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::CustomerPermissionsReview(cmd) => {
                     crate::commands::team::customer_permissions_review::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -271,7 +256,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::ProjectPermissionsReview(cmd) => {
                     crate::commands::team::project_permissions_review::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -283,7 +267,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::UserPermissionRequest(cmd) => {
                     crate::commands::team::user_permission_request::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -299,7 +282,6 @@ pub async fn dispatch(
             match cmd {
                 MarketplaceCommand::Offering(cmd) => {
                     crate::commands::marketplace::offering::run(
-                            client,
                             base_url,
                             token,
                             project,
@@ -311,7 +293,6 @@ pub async fn dispatch(
                 }
                 MarketplaceCommand::Resource(cmd) => {
                     crate::commands::marketplace::resource::run(
-                            client,
                             base_url,
                             token,
                             project,

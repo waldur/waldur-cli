@@ -91,3 +91,50 @@ fn strip_null_keys(value: &mut serde_json::Value) {
         _ => {}
     }
 }
+
+/// Validates `body` (already known-valid JSON -- `load_body` guarantees
+/// that) against `schema_json`, a self-contained JSON Schema embedded by the
+/// generator for this operation's request type. Replaces the old approach of
+/// deserializing into an rs-client-generated Rust struct purely to check
+/// shape: this validates against the *exact* schema every other part of the
+/// CLI (skeletons, `--filter`/`--fields`) is already generated from, instead
+/// of a separately-generated Rust crate that can drift from it.
+///
+/// Format keywords (`date-time`, `date`, ...) are validated too -- without
+/// that, a plain `{"type": "string"}` would accept any string, silently
+/// losing the format checking chrono's typed deserialization used to give
+/// date fields for free.
+pub fn validate_request_body(schema_json: &str, body: &str) -> Result<()> {
+    // Both are internal invariants, not user input: schema_json is
+    // generator-embedded, body is load_body's own re-serialized output --
+    // so these can only fail if something upstream is broken.
+    let schema: serde_json::Value = serde_json::from_str(schema_json)
+        .context("internal error: embedded request schema is not valid JSON")?;
+    let instance: serde_json::Value =
+        serde_json::from_str(body).context("internal error: request body is not valid JSON")?;
+
+    let validator = jsonschema::options()
+        .should_validate_formats(true)
+        .build(&schema)
+        .context("internal error: embedded request schema failed to compile")?;
+
+    let errors: Vec<String> = validator
+        .iter_errors(&instance)
+        .map(|e| {
+            let path = e.instance_path().to_string();
+            if path.is_empty() {
+                e.to_string()
+            } else {
+                format!("{path}: {e}")
+            }
+        })
+        .collect();
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        bail!(
+            "the request body is not valid JSON for this resource's request schema:\n  {}",
+            errors.join("\n  ")
+        )
+    }
+}

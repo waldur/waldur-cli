@@ -23,6 +23,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("state", crate::filter::FilterKind::Str),
 ];
 const UPDATE_SKELETON: &str = "{\n  \"availability_zone\": null,\n  \"default_volume_type_name\": null,\n  \"description\": null,\n  \"name\": \"\",\n  \"security_groups\": null,\n  \"skip_creation_of_default_router\": null,\n  \"skip_creation_of_default_subnet\": null\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"availability_zone\":{\"type\":\"string\"},\"default_volume_type_name\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"security_groups\":{\"items\":{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"rules\":{\"items\":{\"properties\":{\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"direction\":{\"allOf\":[{\"enum\":[\"ingress\",\"egress\"]}]},\"ethertype\":{\"allOf\":[{\"enum\":[\"IPv4\",\"IPv6\"]}]},\"from_port\":{\"type\":\"integer\"},\"protocol\":{\"type\":\"string\"},\"remote_group\":{\"format\":\"uri\",\"type\":\"string\"},\"to_port\":{\"type\":\"integer\"}},\"required\":[],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"name\"],\"type\":\"object\"},\"type\":\"array\"},\"skip_creation_of_default_router\":{\"type\":\"boolean\"},\"skip_creation_of_default_subnet\":{\"type\":\"boolean\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"name\": \"\",\n    \"security_groups\": null,\n    \"skip_connection_extnet\": null,\n    \"skip_creation_of_default_router\": null,\n    \"skip_creation_of_default_subnet\": null,\n    \"subnet_cidr\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
 ///OpenStack tenants
 #[derive(clap::Subcommand, Debug)]
@@ -201,7 +202,6 @@ pub struct TenantTerminateArgs {
     pub timeout: u64,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
@@ -288,11 +288,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::OpenStackTenantRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

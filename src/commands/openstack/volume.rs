@@ -32,6 +32,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];
 const UPDATE_SKELETON: &str = "{\n  \"bootable\": null,\n  \"description\": null,\n  \"name\": \"\"\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"bootable\":{\"type\":\"boolean\"},\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"image\": null,\n    \"name\": \"\",\n    \"size\": null,\n    \"type\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
 ///OpenStack volumes
 #[derive(clap::Subcommand, Debug)]
@@ -221,7 +222,6 @@ pub struct VolumeTerminateArgs {
     pub timeout: u64,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
@@ -308,11 +308,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::OpenStackVolumeRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

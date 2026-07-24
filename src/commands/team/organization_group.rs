@@ -10,7 +10,9 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("parent", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"name\": \"\",\n  \"parent\": null\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"name\":{\"type\":\"string\"},\"parent\":{\"format\":\"uri\",\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 const UPDATE_SKELETON: &str = "{\n  \"name\": \"\",\n  \"parent\": null\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"name\":{\"type\":\"string\"},\"parent\":{\"format\":\"uri\",\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 ///Organization groups
 #[derive(clap::Subcommand, Debug)]
 pub enum OrganizationGroupCommand {
@@ -113,7 +115,6 @@ pub struct OrganizationGroupDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     _project: Option<&str>,
@@ -195,11 +196,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::OrganizationGroupRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(CREATE_REQUEST_SCHEMA, &body)?;
             let path = "/api/organization-groups/".to_string();
             if dry_run {
                 return crate::output::print_dry_run("POST", &path, Some(&body), format);
@@ -223,11 +220,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::OrganizationGroupRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

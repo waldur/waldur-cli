@@ -30,7 +30,9 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("username_list", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"active_isds\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"address\":{\"type\":\"string\"},\"affiliations\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"agree_with_policy\":{\"type\":\"boolean\"},\"birth_date\":{\"format\":\"date\",\"type\":\"string\"},\"can_use_personal_access_tokens\":{\"type\":\"boolean\"},\"country_of_residence\":{\"type\":\"string\"},\"deactivation_reason\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"eduperson_assurance\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"email\":{\"format\":\"email\",\"type\":\"string\"},\"first_name\":{\"type\":\"string\"},\"gender\":{\"oneOf\":[{\"enum\":[\"male\",\"female\",\"unknown\"]},{\"enum\":[\"\"]},{\"enum\":[\"null\"]}]},\"image\":{\"format\":\"binary\",\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"is_identity_manager\":{\"type\":\"boolean\"},\"is_staff\":{\"type\":\"boolean\"},\"is_support\":{\"type\":\"boolean\"},\"job_title\":{\"type\":\"string\"},\"last_name\":{\"type\":\"string\"},\"managed_isds\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"nationalities\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"nationality\":{\"type\":\"string\"},\"native_name\":{\"type\":\"string\"},\"notifications_enabled\":{\"type\":\"boolean\"},\"organization\":{\"type\":\"string\"},\"organization_country\":{\"type\":\"string\"},\"organization_registry_code\":{\"type\":\"string\"},\"organization_type\":{\"type\":\"string\"},\"personal_title\":{\"type\":\"string\"},\"phone_number\":{\"type\":\"string\"},\"place_of_birth\":{\"type\":\"string\"},\"preferred_language\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"token_lifetime\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"}},\"required\":[\"email\",\"username\"],\"type\":\"object\"}";
 const UPDATE_SKELETON: &str = "{\n  \"active_isds\": null,\n  \"address\": null,\n  \"affiliations\": null,\n  \"agree_with_policy\": null,\n  \"birth_date\": null,\n  \"can_use_personal_access_tokens\": null,\n  \"country_of_residence\": null,\n  \"deactivation_reason\": null,\n  \"description\": null,\n  \"eduperson_assurance\": null,\n  \"email\": \"\",\n  \"first_name\": null,\n  \"gender\": null,\n  \"image\": null,\n  \"is_active\": null,\n  \"is_identity_manager\": null,\n  \"is_staff\": null,\n  \"is_support\": null,\n  \"job_title\": null,\n  \"last_name\": null,\n  \"managed_isds\": null,\n  \"nationalities\": null,\n  \"nationality\": null,\n  \"native_name\": null,\n  \"notifications_enabled\": null,\n  \"organization\": null,\n  \"organization_country\": null,\n  \"organization_registry_code\": null,\n  \"organization_type\": null,\n  \"personal_title\": null,\n  \"phone_number\": null,\n  \"place_of_birth\": null,\n  \"preferred_language\": null,\n  \"slug\": null,\n  \"token_lifetime\": null,\n  \"username\": \"\"\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"active_isds\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"address\":{\"type\":\"string\"},\"affiliations\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"agree_with_policy\":{\"type\":\"boolean\"},\"birth_date\":{\"format\":\"date\",\"type\":\"string\"},\"can_use_personal_access_tokens\":{\"type\":\"boolean\"},\"country_of_residence\":{\"type\":\"string\"},\"deactivation_reason\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"eduperson_assurance\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"email\":{\"format\":\"email\",\"type\":\"string\"},\"first_name\":{\"type\":\"string\"},\"gender\":{\"oneOf\":[{\"enum\":[\"male\",\"female\",\"unknown\"]},{\"enum\":[\"\"]},{\"enum\":[\"null\"]}]},\"image\":{\"format\":\"binary\",\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"is_identity_manager\":{\"type\":\"boolean\"},\"is_staff\":{\"type\":\"boolean\"},\"is_support\":{\"type\":\"boolean\"},\"job_title\":{\"type\":\"string\"},\"last_name\":{\"type\":\"string\"},\"managed_isds\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"nationalities\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"nationality\":{\"type\":\"string\"},\"native_name\":{\"type\":\"string\"},\"notifications_enabled\":{\"type\":\"boolean\"},\"organization\":{\"type\":\"string\"},\"organization_country\":{\"type\":\"string\"},\"organization_registry_code\":{\"type\":\"string\"},\"organization_type\":{\"type\":\"string\"},\"personal_title\":{\"type\":\"string\"},\"phone_number\":{\"type\":\"string\"},\"place_of_birth\":{\"type\":\"string\"},\"preferred_language\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"token_lifetime\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"}},\"required\":[\"email\",\"username\"],\"type\":\"object\"}";
 ///Users
 #[derive(clap::Subcommand, Debug)]
 pub enum UserCommand {
@@ -196,7 +198,6 @@ pub struct UserDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
@@ -283,11 +284,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::UserRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(CREATE_REQUEST_SCHEMA, &body)?;
             let path = "/api/users/".to_string();
             if dry_run {
                 return crate::output::print_dry_run("POST", &path, Some(&body), format);
@@ -311,11 +308,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::UserRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

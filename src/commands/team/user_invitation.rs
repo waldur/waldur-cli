@@ -18,7 +18,9 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("state", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"civil_number\": null,\n  \"email\": \"\",\n  \"extra_invitation_text\": null,\n  \"full_name\": null,\n  \"job_title\": null,\n  \"native_name\": null,\n  \"organization\": null,\n  \"phone_number\": null,\n  \"role\": \"\",\n  \"scope\": \"\"\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"civil_number\":{\"type\":\"string\"},\"email\":{\"format\":\"email\",\"type\":\"string\"},\"extra_invitation_text\":{\"type\":\"string\"},\"full_name\":{\"type\":\"string\"},\"job_title\":{\"type\":\"string\"},\"native_name\":{\"type\":\"string\"},\"organization\":{\"type\":\"string\"},\"phone_number\":{\"type\":\"string\"},\"role\":{\"format\":\"uuid\",\"type\":\"string\"},\"scope\":{\"type\":\"string\"}},\"required\":[\"email\",\"role\",\"scope\"],\"type\":\"object\"}";
 const UPDATE_SKELETON: &str = "{\n  \"email\": \"\",\n  \"role\": null\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"email\":{\"format\":\"email\",\"type\":\"string\"},\"role\":{\"format\":\"uuid\",\"type\":\"string\"}},\"required\":[\"email\"],\"type\":\"object\"}";
 ///User invitations
 #[derive(clap::Subcommand, Debug)]
 pub enum UserInvitationCommand {
@@ -121,7 +123,6 @@ pub struct UserInvitationDeleteArgs {
     pub uuid: String,
 }
 pub async fn run(
-    _client: &waldur_client::HttpClient,
     base_url: &str,
     token: Option<&str>,
     _project: Option<&str>,
@@ -203,11 +204,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::InvitationRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(CREATE_REQUEST_SCHEMA, &body)?;
             let path = "/api/user-invitations/".to_string();
             if dry_run {
                 return crate::output::print_dry_run("POST", &path, Some(&body), format);
@@ -231,11 +228,7 @@ pub async fn run(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            serde_json::from_str::<waldur_client::InvitationUpdateRequest>(&body)
-                .with_context(|| {
-                    "the request body is not valid JSON for this resource's request schema"
-                        .to_string()
-                })?;
+            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
             let uuid = args
                 .uuid
                 .as_deref()

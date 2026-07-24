@@ -15,7 +15,6 @@ use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use output::OutputFormat;
-use waldur_client::HttpClient;
 
 /// Scriptable CLI for Waldur MasterMind, covering OpenStack resource
 /// management and team/organization management. Generated command surface
@@ -114,18 +113,6 @@ enum Commands {
 /// scoped to the caller's own account.
 const WHOAMI_COLUMNS: &[&str] = &["uuid", "username", "full_name", "email"];
 
-/// Waldur's DRF TokenAuthentication expects the literal "Token <key>" format
-/// (not "Bearer <key>" -- that's only for the separate OIDC/PAT auth
-/// schemes). rs-client's ApiKey auth mode sends this value verbatim with no
-/// prefix, so we supply Waldur's own format here.
-fn build_client(api_url: String, token: Option<&str>) -> HttpClient {
-    let mut client = HttpClient::new().with_base_url(api_url);
-    if let Some(token) = token {
-        client = client.with_api_key(format!("Token {token}"));
-    }
-    client
-}
-
 fn prompt_line(label: &str) -> anyhow::Result<String> {
     use std::io::Write;
     print!("{label}: ");
@@ -150,9 +137,7 @@ async fn login(api_url_flag: Option<String>, token_flag: Option<String>, profile
     // Validate before persisting anything, so a typo'd token doesn't get
     // silently saved and only surface as a confusing 401 on some later,
     // unrelated command.
-    let client = build_client(api_url.clone(), Some(&token));
-    let me = client
-        .users_me_retrieve(None)
+    let me = http::call_one(&api_url, Some(&token), reqwest::Method::GET, "/api/users/me/", None)
         .await
         .context("login failed -- check the API URL and token")?;
 
@@ -167,7 +152,7 @@ async fn login(api_url_flag: Option<String>, token_flag: Option<String>, profile
             project,
         },
     )?;
-    let who = me.username.as_deref().unwrap_or("(unknown user)");
+    let who = me.get("username").and_then(|v| v.as_str()).unwrap_or("(unknown user)");
     println!(
         "Logged in to {api_url} as {who} (profile '{profile}'). Credentials saved to {}.",
         config::config_path()?.display()
@@ -187,8 +172,8 @@ fn logout(profile: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn whoami(client: &HttpClient, format: OutputFormat) -> anyhow::Result<()> {
-    let me = client.users_me_retrieve(None).await?;
+async fn whoami(base_url: &str, token: Option<&str>, format: OutputFormat) -> anyhow::Result<()> {
+    let me = http::call_one(base_url, token, reqwest::Method::GET, "/api/users/me/", None).await?;
     output::print_result(&me, WHOAMI_COLUMNS, format)
 }
 
@@ -281,8 +266,7 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
             if let Some(project) = &config.project {
                 eprintln!("Active project scope: {project}");
             }
-            let client = build_client(config.api_url, config.token.as_deref());
-            return whoami(&client, cli.format).await;
+            return whoami(&config.api_url, config.token.as_deref(), cli.format).await;
         }
         Commands::Schema { group, compact } => {
             return print_schema(group.as_deref(), compact, cli.format);
@@ -294,9 +278,7 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
     };
 
     let config = config::Config::resolve(cli.api_url, cli.token, cli.project, &profile)?;
-    let client = build_client(config.api_url.clone(), config.token.as_deref());
     cli::dispatch(
-        &client,
         &config.api_url,
         config.token.as_deref(),
         config.project.as_deref(),
