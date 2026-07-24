@@ -205,6 +205,7 @@ pub async fn run(
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
+    dry_run: bool,
     command: TenantCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -283,6 +284,9 @@ pub async fn run(
                 .as_deref()
                 .context("this command requires a <uuid> argument")?;
             let path = format!("{}{}{}", "/api/openstack-tenants/", uuid, "/");
+            if dry_run {
+                return crate::output::print_dry_run("PUT", &path, Some(&body), format);
+            }
             let result = crate::http::call_one(
                     base_url,
                     token,
@@ -307,6 +311,7 @@ pub async fn run(
                     token,
                     &body,
                     project,
+                    dry_run,
                     !args.no_wait,
                     args.timeout,
                     format,
@@ -319,6 +324,7 @@ pub async fn run(
                     token,
                     &args.uuid,
                     args.request.as_deref(),
+                    dry_run,
                     !args.no_wait,
                     args.timeout,
                     format,

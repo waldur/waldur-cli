@@ -41,6 +41,12 @@ struct Cli {
     #[arg(long, global = true)]
     debug: bool,
 
+    /// Preview mutating commands (create/update/delete/provision/terminate)
+    /// without executing them: validate the request and print what would be
+    /// sent, then exit. No effect on read-only commands.
+    #[arg(long, global = true)]
+    dry_run: bool,
+
     /// Named credential profile to use with `login`/`logout` and for
     /// resolving stored credentials. Falls back to the WALDUR_PROFILE env
     /// var, then "default".
@@ -266,6 +272,7 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
         &config.api_url,
         config.token.as_deref(),
         config.project.as_deref(),
+        cli.dry_run,
         command,
         cli.format,
     )

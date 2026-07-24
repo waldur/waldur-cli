@@ -143,6 +143,7 @@ pub async fn run(
     base_url: &str,
     token: Option<&str>,
     _project: Option<&str>,
+    dry_run: bool,
     command: RoleCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -212,6 +213,9 @@ pub async fn run(
                         .to_string()
                 })?;
             let path = "/api/roles/".to_string();
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
             let result = crate::http::call_one(
                     base_url,
                     token,
@@ -241,6 +245,9 @@ pub async fn run(
                 .as_deref()
                 .context("this command requires a <uuid> argument")?;
             let path = format!("{}{}{}", "/api/roles/", uuid, "/");
+            if dry_run {
+                return crate::output::print_dry_run("PUT", &path, Some(&body), format);
+            }
             let result = crate::http::call_one(
                     base_url,
                     token,
@@ -253,6 +260,9 @@ pub async fn run(
         }
         RoleCommand::Delete(args) => {
             let path = format!("{}{}{}", "/api/roles/", args.uuid, "/");
+            if dry_run {
+                return crate::output::print_dry_run("DELETE", &path, None, format);
+            }
             let _ = crate::http::call_one(
                     base_url,
                     token,

@@ -125,6 +125,7 @@ pub async fn run(
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
+    dry_run: bool,
     command: FloatingIpCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -186,6 +187,9 @@ pub async fn run(
         }
         FloatingIpCommand::Delete(args) => {
             let path = format!("{}{}{}", "/api/openstack-floating-ips/", args.uuid, "/");
+            if dry_run {
+                return crate::output::print_dry_run("DELETE", &path, None, format);
+            }
             let _ = crate::http::call_one(
                     base_url,
                     token,

@@ -200,6 +200,7 @@ pub async fn run(
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
+    dry_run: bool,
     command: UserCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -274,6 +275,9 @@ pub async fn run(
                         .to_string()
                 })?;
             let path = "/api/users/".to_string();
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
             let result = crate::http::call_one(
                     base_url,
                     token,
@@ -303,6 +307,9 @@ pub async fn run(
                 .as_deref()
                 .context("this command requires a <uuid> argument")?;
             let path = format!("{}{}{}", "/api/users/", uuid, "/");
+            if dry_run {
+                return crate::output::print_dry_run("PUT", &path, Some(&body), format);
+            }
             let result = crate::http::call_one(
                     base_url,
                     token,
@@ -315,6 +322,9 @@ pub async fn run(
         }
         UserCommand::Delete(args) => {
             let path = format!("{}{}{}", "/api/users/", args.uuid, "/");
+            if dry_run {
+                return crate::output::print_dry_run("DELETE", &path, None, format);
+            }
             let _ = crate::http::call_one(
                     base_url,
                     token,

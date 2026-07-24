@@ -84,6 +84,11 @@ The provisioned resource object includes both `resource_uuid` (the OpenStack ten
 volume itself) and `uuid` — its **marketplace resource UUID**, which is what you'll need to
 terminate it.
 
+!!! tip "Preview first"
+    Add `--dry-run` to print the exact order that would be submitted (with the project and
+    any defaults already filled in) without actually creating anything — see
+    [`--dry-run`](3-managing-resources.md#previewing-with-dry-run).
+
 ## Terminating
 
 `terminate` tears a resource down through the same order flow. It takes the resource's

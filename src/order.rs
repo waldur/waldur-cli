@@ -28,16 +28,21 @@ const RESOURCE_COLUMNS: &[&str] = &["uuid", "name", "state"];
 /// completion and prints the provisioned resource. `project` is the ambient
 /// `--project` scope (a UUID): if the order body doesn't already name a
 /// project, it's filled in from this, since every order requires one.
+#[allow(clippy::too_many_arguments)]
 pub async fn provision(
     base_url: &str,
     token: Option<&str>,
     body: &str,
     project: Option<&str>,
+    dry_run: bool,
     wait: bool,
     timeout_secs: u64,
     format: OutputFormat,
 ) -> Result<()> {
     let body = apply_project(body, base_url, project)?;
+    if dry_run {
+        return crate::output::print_dry_run("POST", "/api/marketplace-orders/", Some(&body), format);
+    }
     let order = crate::http::call_one(
         base_url,
         token,
@@ -69,11 +74,13 @@ pub async fn provision(
 
 /// Terminates a marketplace resource (by its `marketplace_resource_uuid`) and,
 /// unless `wait` is false, polls the resulting termination order to completion.
+#[allow(clippy::too_many_arguments)]
 pub async fn terminate(
     base_url: &str,
     token: Option<&str>,
     resource_uuid: &str,
     attributes: Option<&str>,
+    dry_run: bool,
     wait: bool,
     timeout_secs: u64,
     format: OutputFormat,
@@ -90,11 +97,16 @@ pub async fn terminate(
         None => "{}".to_string(),
     };
 
+    let path = format!("/api/marketplace-resources/{resource_uuid}/terminate/");
+    if dry_run {
+        return crate::output::print_dry_run("POST", &path, Some(&body), format);
+    }
+
     let response = crate::http::call_one(
         base_url,
         token,
         reqwest::Method::POST,
-        &format!("/api/marketplace-resources/{resource_uuid}/terminate/"),
+        &path,
         Some(&body),
     )
     .await?;

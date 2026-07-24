@@ -48,6 +48,7 @@ pub async fn run(
     base_url: &str,
     token: Option<&str>,
     _project: Option<&str>,
+    _dry_run: bool,
     command: CustomerPermissionsReviewCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {

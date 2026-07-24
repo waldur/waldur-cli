@@ -107,6 +107,12 @@ waldur-cli openstack instance list \
 - **`whoami` before anything destructive.** One command confirms which instance and identity
   your credentials currently resolve to — cheap insurance before a `delete`/`terminate`.
 
+- **`--dry-run` before a mutation you're unsure of.** It validates and prints the exact
+  request (with any defaults filled in) without sending it — see
+  [Managing resources](3-managing-resources.md#previewing-with-dry-run). Great for building up
+  a `create`/`provision` body iteratively, or confirming a scripted `delete` targets what you
+  think it does.
+
 - **`--debug` shows the actual requests.** One line per HTTP call (method, URL, status,
   timing) on stderr, regardless of `--format` — invaluable for understanding what a command
   does or diagnosing a server-side rejection. See [Troubleshooting](6-troubleshooting.md).

@@ -87,6 +87,7 @@ pub async fn dispatch(
     base_url: &str,
     token: Option<&str>,
     project: Option<&str>,
+    dry_run: bool,
     command: GroupCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
@@ -99,6 +100,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -110,6 +112,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -121,6 +124,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -132,6 +136,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -143,6 +148,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -154,6 +160,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -165,6 +172,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -180,6 +188,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -191,6 +200,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -202,6 +212,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -213,6 +224,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -224,6 +236,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -235,6 +248,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -246,6 +260,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -257,6 +272,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -268,6 +284,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )
@@ -283,6 +300,7 @@ pub async fn dispatch(
                             base_url,
                             token,
                             project,
+                            dry_run,
                             cmd,
                             format,
                         )

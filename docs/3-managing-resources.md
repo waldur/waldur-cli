@@ -77,6 +77,38 @@ This matters because Waldur rejects an explicit `null` for a non-nullable option
 template reads as "I'm not setting this" — fill in the handful of fields you care about, leave
 the rest, and it just works. (This applies at every depth, including nested objects.)
 
+## Previewing with dry-run
+
+Every mutating command — `create`, `update`, `delete`, and `provision`/`terminate` — accepts
+a global `--dry-run` flag. It validates the request and prints exactly what *would* be sent,
+then exits **without making it**:
+
+```bash
+waldur-cli team customer create --dry-run --request '{"name": "Acme"}'
+# DRY RUN -- would send: POST /api/customers/
+# {
+#   "name": "Acme"
+# }
+```
+
+Two things make it more than a formatting exercise:
+
+- **It still validates.** A malformed body or a wrong field type fails under `--dry-run` just
+  as it would for real — so a dry run catches the mistake, it doesn't just echo it back.
+- **It shows the *resolved* request.** Anything the CLI would fill in for you is already
+  applied in the preview — e.g. a [project](1-getting-started.md#working-in-a-project) injected
+  into a `provision` order body appears in the printed body.
+
+Under `--format json`/`toon` the preview is a structured `{dry_run, method, path, body}`
+object, so a script or agent can inspect a planned change programmatically:
+
+```bash
+waldur-cli openstack tenant provision --dry-run --request-file vpc.yaml --format json
+```
+
+`--dry-run` has no effect on read-only commands (`list`/`get`) — they're already
+non-destructive.
+
 ## Deleting
 
 `delete` takes the resource's `<uuid>`:

@@ -43,6 +43,48 @@ pub fn print_result<T: Serialize>(value: &T, columns: &[&str], format: OutputFor
     Ok(())
 }
 
+/// Prints the request a mutating command *would* send under `--dry-run`,
+/// instead of sending it. Respects `--format` so an agent parsing structured
+/// output gets a structured preview: json/toon emit a
+/// `{dry_run, method, path, body}` object; table/tsv print a human line (plus
+/// the pretty body under table). Goes to stdout -- a dry run is a successful,
+/// non-destructive outcome.
+pub fn print_dry_run(
+    method: &str,
+    path: &str,
+    body: Option<&str>,
+    format: OutputFormat,
+) -> Result<()> {
+    // Parse the body so structured output nests it as JSON rather than a
+    // string; fall back to null if it's absent (delete) or somehow not JSON.
+    let body_value = match body {
+        Some(b) => serde_json::from_str(b).unwrap_or(serde_json::Value::Null),
+        None => serde_json::Value::Null,
+    };
+    match format {
+        OutputFormat::Json => {
+            let obj = serde_json::json!({
+                "dry_run": true, "method": method, "path": path, "body": body_value,
+            });
+            println!("{}", serde_json::to_string_pretty(&obj)?);
+        }
+        OutputFormat::Toon => {
+            let obj = serde_json::json!({
+                "dry_run": true, "method": method, "path": path, "body": body_value,
+            });
+            println!("{}", serde_toon::to_string(&obj)?);
+        }
+        OutputFormat::Table => {
+            println!("DRY RUN -- would send: {method} {path}");
+            if !body_value.is_null() {
+                println!("{}", serde_json::to_string_pretty(&body_value)?);
+            }
+        }
+        OutputFormat::Tsv => println!("dry_run\t{method}\t{path}"),
+    }
+    Ok(())
+}
+
 fn print_tsv(json: &serde_json::Value, columns: &[&str]) {
     let rows: Vec<&serde_json::Value> = match json {
         serde_json::Value::Array(items) => items.iter().collect(),
