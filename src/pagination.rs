@@ -125,9 +125,9 @@ pub async fn fetch_all_streaming(
                 .and_then(|v| v.parse::<i64>().ok());
         }
 
-        // Matches rs-client's own generated code: .text() + serde_json::
-        // from_str rather than reqwest's `.json()`, so we don't need
-        // reqwest's "json" feature enabled just for this one call site.
+        // .text() + serde_json::from_str rather than reqwest's `.json()`, so
+        // we don't need reqwest's "json" feature enabled just for this one
+        // call site.
         let body_text = response.text().await.with_context(|| {
             format!("failed to read page {page} body (fetched {sent} item(s) before this)")
         })?;

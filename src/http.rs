@@ -1,8 +1,8 @@
 //! Hand-written: single-request get/create/update/delete against a raw REST
-//! endpoint. Extends the same rationale as `pagination.rs` (list already
-//! bypasses rs-client's typed methods) to every other verb: no typed
-//! response to drift out of sync with the live API, since nothing downstream
-//! of `print_result` ever reads a typed field off the response anyway.
+//! endpoint, the `pagination.rs`-style counterpart for every verb that isn't
+//! `list`: no typed response to drift out of sync with the live API, since
+//! nothing downstream of `print_result` ever reads a typed field off the
+//! response anyway.
 
 use anyhow::{bail, Context, Result};
 

@@ -94,11 +94,9 @@ fn strip_null_keys(value: &mut serde_json::Value) {
 
 /// Validates `body` (already known-valid JSON -- `load_body` guarantees
 /// that) against `schema_json`, a self-contained JSON Schema embedded by the
-/// generator for this operation's request type. Replaces the old approach of
-/// deserializing into an rs-client-generated Rust struct purely to check
-/// shape: this validates against the *exact* schema every other part of the
-/// CLI (skeletons, `--filter`/`--fields`) is already generated from, instead
-/// of a separately-generated Rust crate that can drift from it.
+/// generator for this operation's request type -- the *exact* schema every
+/// other part of the CLI (skeletons, `--filter`/`--fields`) is already
+/// generated from, so a request-body validation can never drift from it.
 ///
 /// Format keywords (`date-time`, `date`, ...) are validated too -- without
 /// that, a plain `{"type": "string"}` would accept any string, silently

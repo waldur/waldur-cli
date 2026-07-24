@@ -11,8 +11,6 @@ Build:
   variables:
     CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
   before_script:
-    # Cargo.toml's rs-client dependency is the public GitHub mirror, so no
-    # auth/URL-rewriting is needed to resolve it here.
     # The rust:bookworm image doesn't ship clippy by default.
     - rustup component add clippy
   script:

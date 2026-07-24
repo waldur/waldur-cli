@@ -32,11 +32,10 @@ pub enum OutputFormat {
 /// Print a single object or a list of objects, either as a table (using
 /// `columns` to pick and order fields), pretty JSON, or TOON.
 ///
-/// Works generically on anything `Serialize`: rs-client's list methods
-/// return `Vec<T>` (aliased), retrieve/create/update return a bare `T`. We
-/// convert to `serde_json::Value` first and branch on whether it's an array,
-/// rather than requiring callers to know which shape their particular
-/// method returns.
+/// Works generically on anything `Serialize`: `list` calls return a JSON
+/// array, `get`/`create`/`update` a bare object. We convert to
+/// `serde_json::Value` first and branch on whether it's an array, rather
+/// than requiring callers to know which shape their particular verb returns.
 pub fn print_result<T: Serialize>(value: &T, columns: &[&str], format: OutputFormat) -> Result<()> {
     let json = serde_json::to_value(value)?;
     match format {
