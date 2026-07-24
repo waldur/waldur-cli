@@ -46,6 +46,14 @@ struct Cli {
     /// var, then "default".
     #[arg(long, global = true)]
     profile: Option<String>,
+
+    /// Project (UUID) to scope commands to: applied as a `project_uuid`
+    /// filter on resources that support it, and as the `project` on
+    /// `provision` orders, unless you specify one explicitly. Falls back to
+    /// the WALDUR_PROJECT env var, then the profile's saved default (see
+    /// `set-project`).
+    #[arg(long, global = true)]
+    project: Option<String>,
 }
 
 // Flattens the generated `cli::GroupCommand` variants (openstack/team) in
@@ -69,6 +77,15 @@ enum Commands {
     Logout,
     /// Show the current user, verifying the active credentials
     Whoami,
+    /// Save a default project (UUID) for the selected profile, so
+    /// project-scoped commands filter to it and `provision` orders use it
+    /// without a `--project` on every invocation
+    SetProject {
+        /// Project UUID (from `waldur-cli team project list`)
+        uuid: String,
+    },
+    /// Clear the selected profile's saved default project
+    UnsetProject,
 }
 
 /// Same column set `team user get` uses -- whoami is conceptually that,
@@ -117,11 +134,15 @@ async fn login(api_url_flag: Option<String>, token_flag: Option<String>, profile
         .await
         .context("login failed -- check the API URL and token")?;
 
+    // Preserve an existing default project across a re-login -- refreshing a
+    // token shouldn't silently drop the profile's project scope.
+    let project = config::load_stored(profile)?.and_then(|c| c.project);
     config::save_stored(
         profile,
         &config::StoredCredentials {
             api_url: api_url.clone(),
             token,
+            project,
         },
     )?;
     let who = me.username.as_deref().unwrap_or("(unknown user)");
@@ -212,17 +233,43 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
         }
         Commands::Login => return login(cli.api_url, cli.token, &profile).await,
         Commands::Logout => return logout(&profile),
+        Commands::SetProject { uuid } => {
+            config::set_project(&profile, &uuid)?;
+            println!("Default project for profile '{profile}' set to {uuid}");
+            return Ok(());
+        }
+        Commands::UnsetProject => {
+            if config::unset_project(&profile)? {
+                println!("Cleared the default project for profile '{profile}'");
+            } else {
+                println!("Profile '{profile}' had no default project");
+            }
+            return Ok(());
+        }
         Commands::Whoami => {
-            let config = config::Config::resolve(cli.api_url, cli.token, &profile)?;
+            let config = config::Config::resolve(cli.api_url, cli.token, cli.project, &profile)?;
+            // Surface the active project scope so it's never a silent surprise
+            // -- on stderr, so `--format json` stdout stays clean.
+            if let Some(project) = &config.project {
+                eprintln!("Active project scope: {project}");
+            }
             let client = build_client(config.api_url, config.token.as_deref());
             return whoami(&client, cli.format).await;
         }
         Commands::Group(cmd) => *cmd,
     };
 
-    let config = config::Config::resolve(cli.api_url, cli.token, &profile)?;
+    let config = config::Config::resolve(cli.api_url, cli.token, cli.project, &profile)?;
     let client = build_client(config.api_url.clone(), config.token.as_deref());
-    cli::dispatch(&client, &config.api_url, config.token.as_deref(), command, cli.format).await
+    cli::dispatch(
+        &client,
+        &config.api_url,
+        config.token.as_deref(),
+        config.project.as_deref(),
+        command,
+        cli.format,
+    )
+    .await
 }
 
 #[tokio::main(flavor = "current_thread")]

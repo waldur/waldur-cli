@@ -25,21 +25,25 @@ const ORDER_COLUMNS: &[&str] = &["uuid", "state", "resource_uuid", "error_messag
 const RESOURCE_COLUMNS: &[&str] = &["uuid", "name", "state"];
 
 /// Submits a marketplace order and, unless `wait` is false, polls it to
-/// completion and prints the provisioned resource.
+/// completion and prints the provisioned resource. `project` is the ambient
+/// `--project` scope (a UUID): if the order body doesn't already name a
+/// project, it's filled in from this, since every order requires one.
 pub async fn provision(
     base_url: &str,
     token: Option<&str>,
     body: &str,
+    project: Option<&str>,
     wait: bool,
     timeout_secs: u64,
     format: OutputFormat,
 ) -> Result<()> {
+    let body = apply_project(body, base_url, project)?;
     let order = crate::http::call_one(
         base_url,
         token,
         reqwest::Method::POST,
         "/api/marketplace-orders/",
-        Some(body),
+        Some(&body),
     )
     .await?;
     let order_uuid = order_uuid(&order)?;
@@ -117,6 +121,27 @@ pub async fn terminate(
         ),
     }
     Ok(())
+}
+
+/// Fills a `project` URL into the order body from the ambient `--project`
+/// scope, unless the body already names a project (an explicit one wins).
+/// The order API takes a project URL; we build it from the UUID + base URL,
+/// consistent with how the rest of the CLI takes raw UUIDs/URLs.
+fn apply_project(body: &str, base_url: &str, project: Option<&str>) -> Result<String> {
+    let Some(uuid) = project else {
+        return Ok(body.to_string());
+    };
+    let mut value: serde_json::Value =
+        serde_json::from_str(body).context("request body is not valid JSON")?;
+    if let Some(object) = value.as_object_mut() {
+        if !object.contains_key("project") {
+            object.insert(
+                "project".to_string(),
+                serde_json::Value::String(format!("{base_url}/api/projects/{uuid}/")),
+            );
+        }
+    }
+    serde_json::to_string(&value).context("re-serializing request body to JSON")
 }
 
 fn order_uuid(order: &serde_json::Value) -> Result<String> {

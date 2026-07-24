@@ -53,6 +53,11 @@ Repeat a key to pass multiple values for a list-valued filter (they're OR'd serv
 waldur-cli marketplace offering list --filter type=OpenStack.Instance --filter type=OpenStack.Volume
 ```
 
+!!! tip "Ambient project scope"
+    If you've set a [current project](1-getting-started.md#working-in-a-project), it's
+    applied automatically as `project_uuid` to every list that supports it — no `--filter
+    project_uuid=` needed. An explicit `--filter project_uuid=<other>` still overrides it.
+
 !!! tip "Full-text search"
     Many resources have a `query` field for full-text search. It's reached through
     `--filter query=<text>` (not a separate flag):

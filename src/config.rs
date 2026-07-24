@@ -22,6 +22,11 @@ pub const DEFAULT_PROFILE: &str = "default";
 pub struct StoredCredentials {
     pub api_url: String,
     pub token: String,
+    /// Default project (UUID) this profile is scoped to, set via
+    /// `set-project`. Optional and omitted from the file when unset, so
+    /// existing credential files (written before this field) still parse.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -94,6 +99,29 @@ pub fn save_stored(profile: &str, creds: &StoredCredentials) -> Result<()> {
     write_file(&file)
 }
 
+/// Saves a default project (UUID) onto an existing, logged-in profile.
+/// Requires credentials to already exist for the profile -- the project
+/// default lives alongside them, so there's nowhere to store it otherwise.
+pub fn set_project(profile: &str, project: &str) -> Result<()> {
+    let mut creds = load_stored(profile)?.with_context(|| {
+        format!("profile '{profile}' has no saved credentials -- run `waldur-cli login` first")
+    })?;
+    creds.project = Some(project.to_string());
+    save_stored(profile, &creds)
+}
+
+/// Clears a profile's default project. Returns whether one was set.
+pub fn unset_project(profile: &str) -> Result<bool> {
+    let Some(mut creds) = load_stored(profile)? else {
+        return Ok(false);
+    };
+    let had = creds.project.take().is_some();
+    if had {
+        save_stored(profile, &creds)?;
+    }
+    Ok(had)
+}
+
 /// Returns whether the profile existed (and was removed). Deletes the whole
 /// file once the last profile is gone, rather than leaving an empty stub.
 pub fn delete_stored(profile: &str) -> Result<bool> {
@@ -114,12 +142,21 @@ pub fn delete_stored(profile: &str) -> Result<bool> {
 pub struct Config {
     pub api_url: String,
     pub token: Option<String>,
+    /// The project (UUID) commands should scope to, if any --
+    /// `--project` > `WALDUR_PROJECT` > the profile's saved default.
+    pub project: Option<String>,
 }
 
 impl Config {
-    pub fn resolve(api_url_flag: Option<String>, token_flag: Option<String>, profile: &str) -> Result<Self> {
+    pub fn resolve(
+        api_url_flag: Option<String>,
+        token_flag: Option<String>,
+        project_flag: Option<String>,
+        profile: &str,
+    ) -> Result<Self> {
         let api_url_env = std::env::var("WALDUR_API_URL").ok();
         let token_env = std::env::var("WALDUR_ACCESS_TOKEN").ok();
+        let project_env = std::env::var("WALDUR_PROJECT").ok();
 
         // Only touch the config file if flags/env vars didn't already give
         // us everything -- keeps a corrupt/unreadable file from breaking
@@ -145,7 +182,20 @@ impl Config {
         };
         let api_url = api_url.trim_end_matches('/').to_string();
 
+        // The saved default project is best-effort: if we didn't already load
+        // the profile (fully-explicit api_url+token) and no --project/env was
+        // given, a missing or unreadable file just means "no default", never
+        // a hard failure of an otherwise-explicit command.
+        let project = project_flag.or(project_env).or_else(|| match &stored {
+            Some(creds) => creds.project.clone(),
+            None => load_stored(profile).ok().flatten().and_then(|c| c.project),
+        });
+
         let token = token_flag.or(token_env).or_else(|| stored.map(|c| c.token));
-        Ok(Self { api_url, token })
+        Ok(Self {
+            api_url,
+            token,
+            project,
+        })
     }
 }

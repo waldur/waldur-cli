@@ -37,6 +37,11 @@ Fill in `offering`, `project`, and the attributes you want. As with `create`, an
 `null` — including nested `attributes` fields — is omitted, so you only fill what you need.
 `accepting_terms_of_service` defaults to `true` in the skeleton.
 
+!!! tip "Ambient project scope"
+    If you've set a [current project](1-getting-started.md#working-in-a-project), you
+    can leave `project` out of the order body entirely — it's filled in from the scope. An
+    explicit `project` in the body still overrides it.
+
 A tenant (VPC) order, for example:
 
 ```json
