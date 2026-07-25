@@ -156,6 +156,9 @@ pub struct InstanceListArgs {
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(long = "order", value_delimiter = ',', allow_hyphen_values = true)]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceGetArgs {
@@ -314,6 +317,9 @@ pub async fn run(
                 if !query_params.iter().any(|(k, _)| k == "project_uuid") {
                     query_params.push(("project_uuid".to_string(), project.to_string()));
                 }
+            }
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
             }
             match &args.fields {
                 Some(fields) => {

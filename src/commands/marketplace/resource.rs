@@ -20,7 +20,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("modified_before", crate::filter::FilterKind::Str),
     ("name", crate::filter::FilterKind::Str),
     ("name_exact", crate::filter::FilterKind::Str),
-    ("o", crate::filter::FilterKind::Str),
     ("offering", crate::filter::FilterKind::Str),
     ("offering_billable", crate::filter::FilterKind::Bool),
     ("offering_shared", crate::filter::FilterKind::Bool),
@@ -175,6 +174,25 @@ pub struct ResourceListArgs {
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(
+        long = "order",
+        value_delimiter = ',',
+        allow_hyphen_values = true,
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["-created",
+            "-end_date",
+            "-name",
+            "-project_name",
+            "-state",
+            "created",
+            "end_date",
+            "name",
+            "project_name",
+            "state"]
+        ),
+    )]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct ResourceGetArgs {
@@ -284,6 +302,9 @@ pub async fn run(
                 if !query_params.iter().any(|(k, _)| k == "project_uuid") {
                     query_params.push(("project_uuid".to_string(), project.to_string()));
                 }
+            }
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
             }
             match &args.fields {
                 Some(fields) => {

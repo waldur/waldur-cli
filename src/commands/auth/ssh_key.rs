@@ -13,7 +13,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("modified_before", crate::filter::FilterKind::Str),
     ("name", crate::filter::FilterKind::Str),
     ("name_exact", crate::filter::FilterKind::Str),
-    ("o", crate::filter::FilterKind::Str),
     ("user_uuid", crate::filter::FilterKind::Str),
 ];
 const CREATE_SKELETON: &str = "{\n  \"name\": null,\n  \"public_key\": \"\"\n}";
@@ -68,6 +67,14 @@ pub struct SshKeyListArgs {
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(
+        long = "order",
+        value_delimiter = ',',
+        allow_hyphen_values = true,
+        value_parser = clap::builder::PossibleValuesParser::new(["-name", "name"]),
+    )]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct SshKeyGetArgs {
@@ -135,6 +142,9 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {

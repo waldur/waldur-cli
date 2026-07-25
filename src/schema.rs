@@ -2565,10 +2565,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
               "type": "string"
             },
             {
-              "key": "o",
-              "type": "string"
-            },
-            {
               "key": "offering_uuid",
               "type": "string"
             },
@@ -2881,10 +2877,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
             },
             {
               "key": "native_name",
-              "type": "string"
-            },
-            {
-              "key": "o",
               "type": "string"
             },
             {
@@ -3381,10 +3373,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
               "type": "string"
             },
             {
-              "key": "o",
-              "type": "string"
-            },
-            {
               "key": "query",
               "type": "string"
             },
@@ -3776,10 +3764,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
             },
             {
               "key": "native_name",
-              "type": "string"
-            },
-            {
-              "key": "o",
               "type": "string"
             },
             {
@@ -4556,10 +4540,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
               "type": "string"
             },
             {
-              "key": "o",
-              "type": "string"
-            },
-            {
               "key": "offering_group_uuid",
               "type": "string"
             },
@@ -4879,10 +4859,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
             },
             {
               "key": "name_exact",
-              "type": "string"
-            },
-            {
-              "key": "o",
               "type": "string"
             },
             {
@@ -5523,10 +5499,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
             },
             {
               "key": "name_exact",
-              "type": "string"
-            },
-            {
-              "key": "o",
               "type": "string"
             },
             {

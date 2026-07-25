@@ -77,8 +77,8 @@ The full guide lives in [`docs/`](docs/):
 1. [Getting started](docs/1-getting-started.md) — authentication, profiles, command
    structure, and output formats
 2. [Querying resources](docs/2-querying-resources.md) — `list`/`get`, filtering, field
-   selection, JMESPath, streaming large lists with `--format ndjson`, and opening a resource
-   in the browser with `get --web`
+   selection, server-side ordering, JMESPath, streaming large lists with `--format ndjson`,
+   and opening a resource in the browser with `get --web`
 3. [Managing resources](docs/3-managing-resources.md) — `create`/`update`/`delete`,
    request-body skeletons, and per-resource action verbs (start/stop/detach/approve/...)
 4. [Provisioning](docs/4-provisioning-openstack.md) — the marketplace order flow

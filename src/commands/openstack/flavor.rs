@@ -12,7 +12,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("name", crate::filter::FilterKind::Str),
     ("name_exact", crate::filter::FilterKind::Str),
     ("name_iregex", crate::filter::FilterKind::Str),
-    ("o", crate::filter::FilterKind::Str),
     ("offering_uuid", crate::filter::FilterKind::Str),
     ("ram", crate::filter::FilterKind::I64),
     ("ram__gte", crate::filter::FilterKind::I64),
@@ -67,6 +66,21 @@ pub struct FlavorListArgs {
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(
+        long = "order",
+        value_delimiter = ',',
+        allow_hyphen_values = true,
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["-cores",
+            "-disk",
+            "-ram",
+            "cores",
+            "disk",
+            "ram"]
+        ),
+    )]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct FlavorGetArgs {
@@ -102,6 +116,9 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {

@@ -17,7 +17,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("job_title", crate::filter::FilterKind::Str),
     ("modified", crate::filter::FilterKind::Str),
     ("native_name", crate::filter::FilterKind::Str),
-    ("o", crate::filter::FilterKind::Str),
     ("organization", crate::filter::FilterKind::Str),
     ("organization_roles", crate::filter::FilterKind::Str),
     ("phone_number", crate::filter::FilterKind::Str),
@@ -133,6 +132,39 @@ pub struct UserListArgs {
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(
+        long = "order",
+        value_delimiter = ',',
+        allow_hyphen_values = true,
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["-description",
+            "-email",
+            "-full_name",
+            "-is_active",
+            "-is_staff",
+            "-is_support",
+            "-job_title",
+            "-native_name",
+            "-organization",
+            "-phone_number",
+            "-registration_method",
+            "-username",
+            "description",
+            "email",
+            "full_name",
+            "is_active",
+            "is_staff",
+            "is_support",
+            "job_title",
+            "native_name",
+            "organization",
+            "phone_number",
+            "registration_method",
+            "username"]
+        ),
+    )]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct UserGetArgs {
@@ -233,6 +265,9 @@ pub async fn run(
                 if !query_params.iter().any(|(k, _)| k == "project_uuid") {
                     query_params.push(("project_uuid".to_string(), project.to_string()));
                 }
+            }
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
             }
             match &args.fields {
                 Some(fields) => {

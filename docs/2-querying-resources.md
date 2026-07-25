@@ -116,6 +116,26 @@ field names rather than rejecting them — an all-invalid `--fields` list would 
 back to the complete object — so a typo fails loudly here instead of silently doing the wrong
 thing.
 
+## `--order FIELD` — sort server-side
+
+Not every resource supports server-side ordering (`--help` shows `--order` only where it
+does), but where it's there, it sorts the *complete* result set before pagination -- unlike
+`--jmespath`, which only reorders whatever page(s) already got fetched:
+
+```bash
+waldur-cli openstack flavor list --order cores            # ascending
+waldur-cli openstack flavor list --order -cores            # descending (- prefix)
+waldur-cli openstack flavor list --order -cores,ram         # multiple fields, mixed direction
+```
+
+Where the resource's `--order` is validated against a known set of fields (most are), an
+unrecognized one is rejected locally with the valid list, the same as `--filter`/`--fields`.
+
+`--order` used to only be reachable as `--filter o=cores` -- that's gone now in favor of this
+dedicated flag, since it's easy to miss that ordering was ever a `--filter` key at all, and
+`-`-prefixed values need `allow_hyphen_values` to parse correctly as a value rather than an
+unrecognized short flag (which a raw `--filter` string never got).
+
 ## `--limit N` — fetch fewer objects
 
 `--limit` caps the number of items, for when a resource has far more results than you need:

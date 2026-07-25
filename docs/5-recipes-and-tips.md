@@ -88,7 +88,7 @@ client-side filtering needed:
 waldur-cli openstack flavor list \
   --filter tenant_uuid=<tenant-uuid> \
   --filter cores__gte=4 --filter ram__gte=8192 \
-  --filter o=cores --limit 1
+  --order cores --limit 1
 
 waldur-cli openstack image list --filter tenant_uuid=<tenant-uuid>
 ```

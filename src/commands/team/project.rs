@@ -25,7 +25,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("modified_before", crate::filter::FilterKind::Str),
     ("name", crate::filter::FilterKind::Str),
     ("name_exact", crate::filter::FilterKind::Str),
-    ("o", crate::filter::FilterKind::Str),
     ("query", crate::filter::FilterKind::Str),
     ("science_domain_uuid", crate::filter::FilterKind::Str),
     ("science_sub_domain_uuid", crate::filter::FilterKind::Str),
@@ -132,6 +131,31 @@ pub struct ProjectListArgs {
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(
+        long = "order",
+        value_delimiter = ',',
+        allow_hyphen_values = true,
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["-created",
+            "-customer_abbreviation",
+            "-customer_name",
+            "-customer_native_name",
+            "-end_date",
+            "-estimated_cost",
+            "-name",
+            "-start_date",
+            "created",
+            "customer_abbreviation",
+            "customer_name",
+            "customer_native_name",
+            "end_date",
+            "estimated_cost",
+            "name",
+            "start_date"]
+        ),
+    )]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct ProjectGetArgs {
@@ -232,6 +256,9 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {

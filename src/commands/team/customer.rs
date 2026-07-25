@@ -17,7 +17,6 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("name", crate::filter::FilterKind::Str),
     ("name_exact", crate::filter::FilterKind::Str),
     ("native_name", crate::filter::FilterKind::Str),
-    ("o", crate::filter::FilterKind::Str),
     ("organization_group_name", crate::filter::FilterKind::Str),
     ("organization_group_uuid", crate::filter::FilterKind::Str),
     ("owned_by_current_user", crate::filter::FilterKind::Bool),
@@ -135,6 +134,9 @@ pub struct CustomerListArgs {
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(long = "order", value_delimiter = ',', allow_hyphen_values = true)]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct CustomerGetArgs {
@@ -235,6 +237,9 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
