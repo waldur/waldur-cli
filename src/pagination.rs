@@ -10,8 +10,6 @@
 //! request/one response shape has no need for.
 
 use anyhow::{bail, Context, Result};
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use reqwest_tracing::TracingMiddleware;
 
 /// Waldur's `LinkHeaderPagination.max_page_size` -- the largest page we can
 /// ask for, to minimize round trips.
@@ -22,12 +20,6 @@ const MAX_PAGE_SIZE: i64 = 300;
 /// rather than looping indefinitely. Generous enough to never trigger for
 /// a real result set (10_000 * 300 = 3,000,000 items).
 const MAX_PAGES: i64 = 10_000;
-
-pub(crate) fn build_client() -> ClientWithMiddleware {
-    ClientBuilder::new(reqwest::Client::new())
-        .with(TracingMiddleware::default())
-        .build()
-}
 
 /// Fetches every page of `path` (a list endpoint), merging them into one
 /// JSON array. A thin buffering wrapper over `fetch_all_streaming` -- see
@@ -86,7 +78,8 @@ pub async fn fetch_all_streaming(
         }
     }
 
-    let client = build_client();
+    // Always GET, so always safe to retry.
+    let client = crate::http::build_client();
     let mut sent: i64 = 0;
     let mut page = 1i64;
     let mut total: Option<i64> = None;

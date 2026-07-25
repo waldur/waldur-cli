@@ -31,6 +31,25 @@ which HomePort routes) is controlled by
 in the generator repo -- see that repo's README for the manifest format and how to add a
 resource or verb.
 
+## HTTP transport
+
+`http.rs` owns the two shared clients (`pagination.rs` borrows one for its page loop):
+
+- `build_client()` -- retries transient failures (connection errors, timeouts, `5xx`, `429`)
+  with exponential backoff.
+- `build_client_no_retry()` -- same timeout, no retrying.
+
+`call_one` picks between them with `Method::is_idempotent()`, which is the whole point of the
+split: replaying a `POST`/`PATCH` that timed out *after* the server applied it would duplicate
+the effect, and for `provision` that's a duplicate marketplace order. GET/PUT/DELETE are safe
+to replay; POST/PATCH are not, so they fail fast instead.
+
+Both clients set an explicit request timeout, because reqwest's default is **no** timeout at
+all — an unattended run would otherwise hang forever on a stalled connection.
+
+`reqwest-retry` is pinned to `0.8`: `0.9` requires `reqwest-middleware` 0.5, which requires
+`reqwest` 0.13, cascading an upgrade of the whole HTTP stack for no functional gain.
+
 ## Building and testing
 
 ```bash
@@ -42,7 +61,7 @@ cargo clippy --all-targets
 The crate is split into a library (everything except the `Cli`/`main()` entry point in
 `main.rs`) and a thin binary, so `tests/*.rs` can exercise the actual logic directly instead
 of only being able to shell out to the compiled binary. Networked code (`pagination`, `http`,
-`order`, `wait`, `web`) is tested against an in-process HTTP mock
+`order`, `wait`, `web`, retry/timeout) is tested against an in-process HTTP mock
 ([`wiremock`](https://docs.rs/wiremock)) rather than a live Waldur instance -- see `tests/*.rs`
 for examples. `config.rs` tests use [`serial_test`](https://docs.rs/serial_test) plus a
 per-test `tempfile::TempDir`/`XDG_CONFIG_HOME` override, since env vars and the config file

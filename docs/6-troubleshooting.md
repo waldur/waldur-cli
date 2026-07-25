@@ -33,6 +33,31 @@ handle success and failure through one JSON parser without a separate error path
 | `marketplace order ... erred: <message>` | the async order failed server-side | read the surfaced `error_message`; check the order in the Waldur UI |
 | `timed out after Ns waiting for marketplace order ...` | the order didn't reach a terminal state in time | it may still complete — check later, or retry with a larger `--timeout` |
 | `API error 401` | missing/invalid/expired token | re-check `--token`/`WALDUR_ACCESS_TOKEN`, or `login` again |
+| `... request failed` after a pause | the request timed out, or exhausted its retries | raise `--http-timeout`/`--max-retries`; see below |
+
+## Timeouts and retries
+
+Every request has a 60-second cap and transient failures are retried automatically — a
+connection error, a request timeout, a `5xx`, or a `429` rate limit, up to 3 times with
+exponential backoff. Both are tunable, globally or per command:
+
+```bash
+waldur-cli team customer list --http-timeout 15 --max-retries 5
+export WALDUR_HTTP_TIMEOUT=15 WALDUR_MAX_RETRIES=5   # or via the environment
+waldur-cli team customer list --max-retries 0        # 0 disables retrying
+```
+
+Two things worth knowing:
+
+- **Only replayable requests are retried.** `list`/`get`/`delete` are; `create`, `update`, and
+  `provision` are **not**. A `POST` that times out may still have been applied server-side, so
+  replaying it could duplicate the effect — for `provision` that means a second marketplace
+  order to pay for. Those fail fast instead, and you decide whether to re-run.
+- **Client errors are never retried.** A `4xx` (other than `429`) will fail identically every
+  time, so retrying it would only delay the message.
+
+`--http-timeout` is per HTTP request, and is unrelated to `provision`/`terminate`/`wait`'s own
+`--timeout`, which bounds a whole poll-until-done operation made of many requests.
 
 ## Debugging (`--debug`)
 

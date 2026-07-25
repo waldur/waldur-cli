@@ -56,6 +56,21 @@ struct Cli {
     /// that's wrong or unreachable for your deployment.
     #[arg(long, global = true)]
     homeport_url: Option<String>,
+
+    /// Seconds to allow each individual HTTP request before giving up
+    /// (default 60). Distinct from `provision`/`wait`'s own `--timeout`,
+    /// which bounds a whole poll-until-done operation. Falls back to the
+    /// WALDUR_HTTP_TIMEOUT env var.
+    #[arg(long, global = true, value_name = "SECONDS")]
+    http_timeout: Option<u64>,
+
+    /// How many times to retry a request that failed transiently -- a
+    /// connection error, a timeout, a 5xx, or a 429 (default 3). Only
+    /// applies to replayable requests: a create/provision that may already
+    /// have taken effect server-side is never retried. Falls back to the
+    /// WALDUR_MAX_RETRIES env var; 0 disables retrying.
+    #[arg(long, global = true, value_name = "N")]
+    max_retries: Option<u32>,
 }
 
 // Flattens the generated `cli::GroupCommand` variants (openstack/team) in
@@ -211,6 +226,17 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
     progress::set_debug(cli.debug);
 
     web::set_override(cli.homeport_url.clone().or_else(|| std::env::var("WALDUR_HOMEPORT_URL").ok()));
+
+    // A malformed env var is ignored rather than fatal: it's a transport
+    // tuning knob, and falling back to the default is friendlier than
+    // refusing to run at all. An explicit flag is parsed by clap, so a bad
+    // value there still errors properly.
+    http::set_transport_options(
+        cli.http_timeout
+            .or_else(|| std::env::var("WALDUR_HTTP_TIMEOUT").ok().and_then(|v| v.parse().ok())),
+        cli.max_retries
+            .or_else(|| std::env::var("WALDUR_MAX_RETRIES").ok().and_then(|v| v.parse().ok())),
+    );
 
     if cli.debug {
         // reqwest-tracing records request/response fields (method, url,
