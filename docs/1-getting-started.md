@@ -66,6 +66,32 @@ The credentials file lives in your platform config directory (e.g.
 `~/.config/waldur-cli/credentials.toml` on Linux) with owner-only permissions (`0600` on
 Unix).
 
+### Token types
+
+Any of the above accepts either kind of Waldur token, detected automatically from its shape:
+
+- A classic API token (from Waldur's UI, or your own `Token` model) -- used as-is.
+- A **Personal Access Token** (`w_<timestamp>_<random>`, e.g. `w_1735689599_Abc123...`) --
+  named, scoped to a subset of your permissions, and time-limited, which makes it a better fit
+  than a classic token for CI/agent use where a long-lived, unscoped credential is more risk
+  than you need.
+
+You don't need to tell the CLI which kind you're using -- the `w_` prefix is self-identifying.
+
+Manage your own PATs with `waldur-cli team personal-access-token`:
+
+```bash
+waldur-cli team personal-access-token list
+waldur-cli team personal-access-token create --request '{
+  "name": "CI pipeline",
+  "scopes": ["LIST_ORDERS", "LIST_RESOURCES"],
+  "expires_at": "2026-12-31T23:59:59Z"
+}'
+# the response's "token" field is shown once -- save it, e.g. into WALDUR_ACCESS_TOKEN
+waldur-cli team personal-access-token rotate <uuid>   # atomically revoke + reissue
+waldur-cli team personal-access-token delete <uuid>   # revoke
+```
+
 ### whoami
 
 `whoami` shows who the currently-resolved credentials belong to — whichever source they came

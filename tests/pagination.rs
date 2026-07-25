@@ -1,7 +1,7 @@
 //! Tests for src/pagination.rs's `fetch_all`/`fetch_all_streaming`: the
 //! auto-pagination loop every `list` command uses.
 
-use wiremock::matchers::{method, path, query_param};
+use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 fn items(n: usize, offset: usize) -> Vec<serde_json::Value> {
@@ -252,4 +252,22 @@ async fn streaming_stops_and_fetches_no_further_pages_when_on_item_returns_false
     .unwrap();
 
     assert_eq!(seen.len(), 2);
+}
+
+#[tokio::test]
+async fn sends_bearer_authorization_header_for_a_personal_access_token() {
+    let server = MockServer::start().await;
+    // `fetch_all` builds its own Authorization header separately from
+    // src/http.rs's call_one -- this would silently 401 a PAT-authenticated
+    // `list` if the two ever drifted apart.
+    Mock::given(method("GET"))
+        .and(path("/api/customers/"))
+        .and(header("Authorization", "Bearer w_1735689599_abc123"))
+        .respond_with(ResponseTemplate::new(200).insert_header("X-Result-Count", "1").set_body_json(items(1, 0)))
+        .mount(&server)
+        .await;
+
+    waldur_cli::pagination::fetch_all(&server.uri(), Some("w_1735689599_abc123"), "/api/customers/", &[], None)
+        .await
+        .unwrap();
 }

@@ -101,7 +101,7 @@ pub async fn fetch_all_streaming(
 
         let mut req = client.get(format!("{base_url}{path}")).query(&params);
         if let Some(token) = token {
-            req = req.header("Authorization", format!("Token {token}"));
+            req = req.header("Authorization", crate::http::auth_header_value(token));
         }
         let response = req.send().await.with_context(|| {
             format!("pagination request failed on page {page} (fetched {sent} item(s) before this)")

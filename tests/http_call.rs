@@ -53,6 +53,30 @@ async fn sends_authorization_header_in_waldur_token_format() {
 }
 
 #[tokio::test]
+async fn sends_bearer_authorization_header_for_a_personal_access_token() {
+    let server = MockServer::start().await;
+    // Personal Access Tokens (the "w_..." prefix) authenticate via Waldur's
+    // PATAuthentication, which expects "Bearer <token>", not "Token
+    // <token>" -- the classic-token scheme above would silently 401 a PAT.
+    Mock::given(method("GET"))
+        .and(path("/api/whatever/"))
+        .and(header("Authorization", "Bearer w_1735689599_abc123"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({})))
+        .mount(&server)
+        .await;
+
+    waldur_cli::http::call_one(
+        &server.uri(),
+        Some("w_1735689599_abc123"),
+        reqwest::Method::GET,
+        "/api/whatever/",
+        None,
+    )
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
 async fn post_sends_body_and_content_type() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))

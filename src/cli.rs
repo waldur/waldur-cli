@@ -51,6 +51,11 @@ pub enum TeamCommand {
     ///Roles
     #[command(subcommand)]
     Role(crate::commands::team::role::RoleCommand),
+    ///Personal access tokens (named, scoped, time-limited API credentials)
+    #[command(subcommand)]
+    PersonalAccessToken(
+        crate::commands::team::personal_access_token::PersonalAccessTokenCommand,
+    ),
 }
 ///Browse offerings and provision resources of any offering type
 #[derive(clap::Subcommand, Debug)]
@@ -192,6 +197,17 @@ pub async fn dispatch(
                 }
                 TeamCommand::Role(cmd) => {
                     crate::commands::team::role::run(
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+                TeamCommand::PersonalAccessToken(cmd) => {
+                    crate::commands::team::personal_access_token::run(
                             base_url,
                             token,
                             project,

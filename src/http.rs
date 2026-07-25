@@ -6,6 +6,20 @@
 
 use anyhow::{bail, Context, Result};
 
+/// Builds the `Authorization` header value for `token`. Personal Access
+/// Tokens are self-identifying by their `w_` prefix (Waldur's own
+/// `PATAuthentication` middleware uses the same prefix check to route
+/// between auth backends) and authenticate via `Bearer`; every other token
+/// (from `login`/`--token`/`WALDUR_ACCESS_TOKEN`) is a classic DRF token via
+/// `Token`.
+pub fn auth_header_value(token: &str) -> String {
+    if token.starts_with("w_") {
+        format!("Bearer {token}")
+    } else {
+        format!("Token {token}")
+    }
+}
+
 /// Sends one request and returns its parsed JSON body (`Value::Null` for an
 /// empty body, e.g. DELETE's 204 No Content).
 pub async fn call_one(
@@ -18,7 +32,7 @@ pub async fn call_one(
     let client = crate::pagination::build_client();
     let mut req = client.request(method.clone(), format!("{base_url}{path}"));
     if let Some(token) = token {
-        req = req.header("Authorization", format!("Token {token}"));
+        req = req.header("Authorization", auth_header_value(token));
     }
     if let Some(body) = json_body {
         req = req.header("Content-Type", "application/json").body(body.to_string());
