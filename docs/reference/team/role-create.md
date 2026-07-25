@@ -1,0 +1,33 @@
+# `waldur-cli team role create`
+
+Create roles.
+
+## Usage
+
+```bash
+waldur-cli team role create (--request JSON | --request-file PATH | --generate-skeleton)
+```
+
+| Flag | Type | Description |
+| --- | --- | --- |
+| `--request JSON` | string | Request body as inline JSON. |
+| `--request-file PATH` | path | Read the request body from a JSON or YAML file. |
+| `--generate-skeleton [FORMAT]` | json|yaml | Print a fillable template and exit, instead of sending a request. |
+
+## Examples
+
+See the fillable template first:
+
+```bash
+waldur-cli team role create --generate-skeleton
+```
+
+Then fill it in and submit:
+
+```bash
+waldur-cli team role create --request '{"content_type":"","description":null,"description_ar":null,"description_cs":null,"description_da":null,"description_de":null,"description_en":null,"description_es":null,"description_et":null,"description_fr":null,"description_it":null,"description_lt":null,"description_lv":null,"description_nb":null,"description_ru":null,"description_sv":null,"is_active":null,"name":"","permissions":{}}'
+```
+
+## Global options
+
+Every command also accepts `--api-url`, `--token`, `--profile`, `--format`, and `--debug`; mutating commands additionally accept `--dry-run`. See [Getting started](../../1-getting-started.md) for what each does.

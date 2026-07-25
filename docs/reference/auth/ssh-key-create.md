@@ -1,0 +1,33 @@
+# `waldur-cli auth ssh-key create`
+
+Create ssh public keys.
+
+## Usage
+
+```bash
+waldur-cli auth ssh-key create (--request JSON | --request-file PATH | --generate-skeleton)
+```
+
+| Flag | Type | Description |
+| --- | --- | --- |
+| `--request JSON` | string | Request body as inline JSON. |
+| `--request-file PATH` | path | Read the request body from a JSON or YAML file. |
+| `--generate-skeleton [FORMAT]` | json|yaml | Print a fillable template and exit, instead of sending a request. |
+
+## Examples
+
+See the fillable template first:
+
+```bash
+waldur-cli auth ssh-key create --generate-skeleton
+```
+
+Then fill it in and submit:
+
+```bash
+waldur-cli auth ssh-key create --request '{"name":null,"public_key":""}'
+```
+
+## Global options
+
+Every command also accepts `--api-url`, `--token`, `--profile`, `--format`, and `--debug`; mutating commands additionally accept `--dry-run`. See [Getting started](../../1-getting-started.md) for what each does.

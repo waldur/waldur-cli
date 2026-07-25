@@ -1,0 +1,33 @@
+# `waldur-cli openstack tenant terminate`
+
+Terminate openstack tenants via a marketplace order.
+
+## Usage
+
+```bash
+waldur-cli openstack tenant terminate <MARKETPLACE_RESOURCE_UUID> [OPTIONS]
+```
+
+| Flag | Type | Description |
+| --- | --- | --- |
+| `<MARKETPLACE_RESOURCE_UUID>` | positional, required | The resource's `marketplace_resource_uuid` field (from get/list) -- not its own uuid. |
+| `--request JSON` | string | Optional termination attributes as inline JSON. |
+| `--no-wait` | flag | Submit and return immediately, without polling the order to completion. |
+| `--timeout N` | integer | Seconds to wait for termination before giving up (default 600). |
+| `--interval N` | integer | Seconds between polls (default 3). |
+
+## Examples
+
+```bash
+waldur-cli openstack tenant terminate <marketplace-resource-uuid>
+```
+
+With termination attributes:
+
+```bash
+waldur-cli openstack tenant terminate <marketplace-resource-uuid> --request '{"delete_volumes": true}'
+```
+
+## Global options
+
+Every command also accepts `--api-url`, `--token`, `--profile`, `--format`, and `--debug`; mutating commands additionally accept `--dry-run`. See [Getting started](../../1-getting-started.md) for what each does.

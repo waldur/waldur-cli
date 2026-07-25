@@ -89,6 +89,11 @@ The full guide lives in [`docs/`](docs/):
 6. [Troubleshooting](docs/6-troubleshooting.md) — errors, `--debug`, exit codes, and shell
    completions
 
+Looking for a specific command? [`docs/reference/`](docs/reference/) has one page per
+`waldur-cli <group> <resource> <verb>`, each with its flags and a real example — generated
+from the same schema data the CLI itself is built from, so it never drifts from what's
+actually there.
+
 Contributing to `waldur-cli` itself (not just using it)? See
 [docs/development.md](docs/development.md) — the generator/target repo split, building and
 testing, regenerating the command surface, and cutting a release.

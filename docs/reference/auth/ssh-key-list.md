@@ -1,0 +1,40 @@
+# `waldur-cli auth ssh-key list`
+
+List ssh public keys.
+
+## Usage
+
+```bash
+waldur-cli auth ssh-key list [OPTIONS]
+```
+
+| Flag | Type | Description |
+| --- | --- | --- |
+| `--filter KEY=VALUE` | repeatable | Server-side filter. Valid keys: `created` (string), `created_before` (string), `fingerprint_md5` (string), `fingerprint_sha256` (string), `fingerprint_sha512` (string), `is_shared` (boolean), `modified` (string), `modified_before` (string), `name` (string), `name_exact` (string), `user_uuid` (string). |
+| `--fields FIELDS` | string | Fetch only these fields from the server (comma-separated). Valid: fingerprint_md5, fingerprint_sha256, fingerprint_sha512, is_shared, name, public_key, type, url, user_uuid, uuid. |
+| `--order FIELDS` | string | Sort server-side (comma-separated, `-` prefix for descending). Valid: -name, name. |
+| `--jmespath EXPR` | string | Reshape the already-fetched result client-side (https://jmespath.org). |
+| `--limit N` | integer | Stop after this many items. |
+| `--format FORMAT` | string | table, json, tsv, toon, or ndjson. |
+
+## Examples
+
+```bash
+waldur-cli auth ssh-key list --filter name_exact=example --fields uuid,name --format json
+```
+
+Project just the columns you need, client-side:
+
+```bash
+waldur-cli auth ssh-key list --jmespath '[].[uuid, name]'
+```
+
+Smallest/first result matching a filter, sorted server-side:
+
+```bash
+waldur-cli auth ssh-key list --order name --limit 1
+```
+
+## Global options
+
+Every command also accepts `--api-url`, `--token`, `--profile`, `--format`, and `--debug`; mutating commands additionally accept `--dry-run`. See [Getting started](../../1-getting-started.md) for what each does.

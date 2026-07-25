@@ -20,6 +20,10 @@ hand-maintained layer for it to drift against.
 - `src/cli.rs` -- the top-level `openstack`/`team`/`marketplace`/`auth` group wiring
 - `src/schema.rs` -- the CLI's command surface as JSON, embedded for `waldur-cli schema`
   (a machine-readable tool spec for LLM agents)
+- `docs/reference/` -- one markdown page per `<group> <resource> <verb>` command, plus a
+  README index per group. Unlike `src/commands/`, nothing hand-written is ever expected here,
+  so the whole directory is deleted and rewritten on every run rather than merged with
+  existing content -- a resource/verb that goes away can't leave a stale page behind
 
 **Hand-written and permanent** -- everything else in `src/`: `lib.rs`, `main.rs`, `config.rs`,
 `output.rs`, `pagination.rs`, `http.rs`, `web.rs`, `request.rs`, `filter.rs`, `query.rs`,
@@ -115,9 +119,10 @@ From a checkout of `waldur-cli-generator`, sitting as a sibling directory to thi
 cargo run -- waldur-openapi-schema.yaml ../waldur-cli
 ```
 
-This overwrites `src/commands/`, `src/cli.rs`, and `src/schema.rs` in place. Review the diff,
-then `cargo build --locked && cargo test --locked && cargo clippy --all-targets` here as
-usual before committing -- regeneration itself doesn't run those checks.
+This overwrites `src/commands/`, `src/cli.rs`, and `src/schema.rs` in place, and deletes +
+rewrites `docs/reference/` wholesale. Review the diff, then `cargo build --locked && cargo
+test --locked && cargo clippy --all-targets` here as usual before committing -- regeneration
+itself doesn't run those checks.
 
 In CI, this happens automatically: `waldur-cli-generator`'s pipeline fetches the latest schema
 from `waldur-mastermind`, regenerates, and pushes the result to this repo's `main` directly
