@@ -163,12 +163,16 @@ waldur-cli marketplace resource terminate <marketplace_resource_uuid>
 The typed `openstack ... provision` commands are just a convenience for the three OpenStack
 types — anything they can do, `marketplace resource` can do generically.
 
-## Waiting on anything, not just orders
+## Waiting on anything with real async state, not just orders
 
-Every command with a `get` also gets a `wait` — polling on an interval until a `--jmespath`
-condition against the fetched object is met, or timing out. Waldur's API has no server-side
-push/watch mechanism, so this is a client-side poll, not an instant notification -- but it
-saves you from writing your own poll loop.
+Resources with genuine async, server-side state to reach — an OpenStack tenant/instance/
+volume, a generic marketplace resource, and the order itself — get a `wait` command: polling
+on an interval until a `--jmespath` condition against the fetched object is met, or timing
+out. Waldur's API has no server-side push/watch mechanism, so this is a client-side poll, not
+an instant notification -- but it saves you from writing your own poll loop. Plain CRUD
+resources (a customer, a role, a catalog entry like a flavor) reach their final state
+synchronously on `create`/`update`, so there's nothing to wait *for* and no `wait` command --
+check `--help` on a given resource to see whether it has one.
 
 The condition can be a boolean comparison:
 

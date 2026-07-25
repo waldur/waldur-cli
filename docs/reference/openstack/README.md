@@ -4,14 +4,12 @@
 
 - [list](./flavor-list.md)
 - [get](./flavor-get.md)
-- [wait](./flavor-wait.md)
 
 ## floating-ip
 
 - [list](./floating-ip-list.md)
 - [get](./floating-ip-get.md)
 - [delete](./floating-ip-delete.md)
-- [wait](./floating-ip-wait.md)
 - [detach-from-port](./floating-ip-detach-from-port.md)
 - [set-ok](./floating-ip-set-ok.md)
 - [unlink](./floating-ip-unlink.md)
@@ -20,7 +18,6 @@
 
 - [list](./image-list.md)
 - [get](./image-get.md)
-- [wait](./image-wait.md)
 
 ## instance
 
@@ -43,7 +40,6 @@
 - [get](./network-get.md)
 - [update](./network-update.md)
 - [delete](./network-delete.md)
-- [wait](./network-wait.md)
 
 ## security-group
 
@@ -51,7 +47,6 @@
 - [get](./security-group-get.md)
 - [update](./security-group-update.md)
 - [delete](./security-group-delete.md)
-- [wait](./security-group-wait.md)
 
 ## subnet
 
@@ -59,7 +54,6 @@
 - [get](./subnet-get.md)
 - [update](./subnet-update.md)
 - [delete](./subnet-delete.md)
-- [wait](./subnet-wait.md)
 
 ## tenant
 

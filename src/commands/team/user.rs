@@ -45,8 +45,6 @@ pub enum UserCommand {
     Update(UserUpdateArgs),
     ///Delete users
     Delete(UserDeleteArgs),
-    ///Wait for a --jmespath condition on users
-    Wait(UserWaitArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct UserListArgs {
@@ -231,22 +229,6 @@ pub struct UserUpdateArgs {
 pub struct UserDeleteArgs {
     pub uuid: String,
 }
-#[derive(clap::Args, Debug)]
-pub struct UserWaitArgs {
-    pub uuid: String,
-    /// JMESPath condition to poll for, evaluated against the
-    /// fetched object on every poll (e.g. "state=='OK'").
-    /// Waiting stops as soon as this evaluates to anything
-    /// other than false or null.
-    #[arg(long)]
-    pub jmespath: String,
-    /// Seconds to wait for the condition before giving up.
-    #[arg(long, default_value_t = 600)]
-    pub timeout: u64,
-    /// Seconds between polls.
-    #[arg(long, default_value_t = 3)]
-    pub interval: u64,
-}
 pub async fn run(
     base_url: &str,
     token: Option<&str>,
@@ -413,20 +395,6 @@ pub async fn run(
                     );
                 }
             }
-        }
-        UserCommand::Wait(args) => {
-            let path = format!("{}{}{}", "/api/users/", args.uuid, "/");
-            crate::wait::wait_for(
-                    base_url,
-                    token,
-                    &path,
-                    &args.jmespath,
-                    args.timeout,
-                    args.interval,
-                    COLUMNS,
-                    format,
-                )
-                .await?;
         }
     }
     Ok(())

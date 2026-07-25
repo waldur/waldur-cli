@@ -22,8 +22,6 @@ pub enum PersonalAccessTokenCommand {
     Create(PersonalAccessTokenCreateArgs),
     ///Delete personal access tokens (named, scoped, time-limited api credentials)
     Delete(PersonalAccessTokenDeleteArgs),
-    ///Wait for a --jmespath condition on personal access tokens (named, scoped, time-limited api credentials)
-    Wait(PersonalAccessTokenWaitArgs),
     ///Rotate personal access tokens (named, scoped, time-limited api credentials)
     Rotate(PersonalAccessTokenRotateArgs),
 }
@@ -84,22 +82,6 @@ pub struct PersonalAccessTokenCreateArgs {
 #[derive(clap::Args, Debug)]
 pub struct PersonalAccessTokenDeleteArgs {
     pub uuid: String,
-}
-#[derive(clap::Args, Debug)]
-pub struct PersonalAccessTokenWaitArgs {
-    pub uuid: String,
-    /// JMESPath condition to poll for, evaluated against the
-    /// fetched object on every poll (e.g. "state=='OK'").
-    /// Waiting stops as soon as this evaluates to anything
-    /// other than false or null.
-    #[arg(long)]
-    pub jmespath: String,
-    /// Seconds to wait for the condition before giving up.
-    #[arg(long, default_value_t = 600)]
-    pub timeout: u64,
-    /// Seconds between polls.
-    #[arg(long, default_value_t = 3)]
-    pub interval: u64,
 }
 #[derive(clap::Args, Debug)]
 pub struct PersonalAccessTokenRotateArgs {
@@ -235,20 +217,6 @@ pub async fn run(
                     );
                 }
             }
-        }
-        PersonalAccessTokenCommand::Wait(args) => {
-            let path = format!("{}{}{}", "/api/personal-access-tokens/", args.uuid, "/");
-            crate::wait::wait_for(
-                    base_url,
-                    token,
-                    &path,
-                    &args.jmespath,
-                    args.timeout,
-                    args.interval,
-                    COLUMNS,
-                    format,
-                )
-                .await?;
         }
         PersonalAccessTokenCommand::Rotate(args) => {
             let path = format!(

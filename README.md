@@ -82,8 +82,8 @@ The full guide lives in [`docs/`](docs/):
 3. [Managing resources](docs/3-managing-resources.md) — `create`/`update`/`delete`,
    request-body skeletons, and per-resource action verbs (start/stop/detach/approve/...)
 4. [Provisioning](docs/4-provisioning-openstack.md) — the marketplace order flow
-   (`provision`/`terminate`), for OpenStack and any other offering type, plus the generic
-   `wait` verb every resource gets
+   (`provision`/`terminate`), for OpenStack and any other offering type, plus `wait`, for
+   polling resources with real async server-side state to completion
 5. [Recipes & tips](docs/5-recipes-and-tips.md) — real-world workflows and things worth
    knowing
 6. [Troubleshooting](docs/6-troubleshooting.md) — errors, `--debug`, exit codes, and shell

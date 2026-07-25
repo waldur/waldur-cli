@@ -28,8 +28,6 @@ pub enum SshKeyCommand {
     Create(SshKeyCreateArgs),
     ///Delete ssh public keys
     Delete(SshKeyDeleteArgs),
-    ///Wait for a --jmespath condition on ssh public keys
-    Wait(SshKeyWaitArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct SshKeyListArgs {
@@ -111,22 +109,6 @@ pub struct SshKeyCreateArgs {
 #[derive(clap::Args, Debug)]
 pub struct SshKeyDeleteArgs {
     pub uuid: String,
-}
-#[derive(clap::Args, Debug)]
-pub struct SshKeyWaitArgs {
-    pub uuid: String,
-    /// JMESPath condition to poll for, evaluated against the
-    /// fetched object on every poll (e.g. "state=='OK'").
-    /// Waiting stops as soon as this evaluates to anything
-    /// other than false or null.
-    #[arg(long)]
-    pub jmespath: String,
-    /// Seconds to wait for the condition before giving up.
-    #[arg(long, default_value_t = 600)]
-    pub timeout: u64,
-    /// Seconds between polls.
-    #[arg(long, default_value_t = 3)]
-    pub interval: u64,
 }
 pub async fn run(
     base_url: &str,
@@ -261,20 +243,6 @@ pub async fn run(
                     );
                 }
             }
-        }
-        SshKeyCommand::Wait(args) => {
-            let path = format!("{}{}{}", "/api/keys/", args.uuid, "/");
-            crate::wait::wait_for(
-                    base_url,
-                    token,
-                    &path,
-                    &args.jmespath,
-                    args.timeout,
-                    args.interval,
-                    COLUMNS,
-                    format,
-                )
-                .await?;
         }
     }
     Ok(())

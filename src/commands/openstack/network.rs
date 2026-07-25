@@ -41,8 +41,6 @@ pub enum NetworkCommand {
     Update(NetworkUpdateArgs),
     ///Delete openstack networks
     Delete(NetworkDeleteArgs),
-    ///Wait for a --jmespath condition on openstack networks
-    Wait(NetworkWaitArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct NetworkListArgs {
@@ -153,22 +151,6 @@ pub struct NetworkUpdateArgs {
 #[derive(clap::Args, Debug)]
 pub struct NetworkDeleteArgs {
     pub uuid: String,
-}
-#[derive(clap::Args, Debug)]
-pub struct NetworkWaitArgs {
-    pub uuid: String,
-    /// JMESPath condition to poll for, evaluated against the
-    /// fetched object on every poll (e.g. "state=='OK'").
-    /// Waiting stops as soon as this evaluates to anything
-    /// other than false or null.
-    #[arg(long)]
-    pub jmespath: String,
-    /// Seconds to wait for the condition before giving up.
-    #[arg(long, default_value_t = 600)]
-    pub timeout: u64,
-    /// Seconds between polls.
-    #[arg(long, default_value_t = 3)]
-    pub interval: u64,
 }
 pub async fn run(
     base_url: &str,
@@ -309,20 +291,6 @@ pub async fn run(
                     );
                 }
             }
-        }
-        NetworkCommand::Wait(args) => {
-            let path = format!("{}{}{}", "/api/openstack-networks/", args.uuid, "/");
-            crate::wait::wait_for(
-                    base_url,
-                    token,
-                    &path,
-                    &args.jmespath,
-                    args.timeout,
-                    args.interval,
-                    COLUMNS,
-                    format,
-                )
-                .await?;
         }
     }
     Ok(())

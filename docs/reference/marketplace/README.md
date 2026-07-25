@@ -4,7 +4,6 @@
 
 - [list](./offering-list.md)
 - [get](./offering-get.md)
-- [wait](./offering-wait.md)
 
 ## order
 
