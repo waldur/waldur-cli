@@ -8,7 +8,7 @@ Every command has the same three-level shape:
 waldur-cli <group> <resource> <verb> [arguments] [options]
 ```
 
-- **group** — a broad area: `openstack`, `team`, or `marketplace`
+- **group** — a broad area: `openstack`, `team`, `marketplace`, or `auth`
 - **resource** — what you're acting on: `instance`, `customer`, `offering`, …
 - **verb** — what to do: `list`, `get`, `create`, `update`, `delete`, `provision`,
   `terminate`
@@ -78,18 +78,22 @@ Any of the above accepts either kind of Waldur token, detected automatically fro
 
 You don't need to tell the CLI which kind you're using -- the `w_` prefix is self-identifying.
 
-Manage your own PATs with `waldur-cli team personal-access-token`:
+Manage your own PATs and SSH public keys under the `auth` group -- your own credentials,
+distinct from `team`, which manages *other* users/customers/projects:
 
 ```bash
-waldur-cli team personal-access-token list
-waldur-cli team personal-access-token create --request '{
+waldur-cli auth personal-access-token list
+waldur-cli auth personal-access-token create --request '{
   "name": "CI pipeline",
   "scopes": ["LIST_ORDERS", "LIST_RESOURCES"],
   "expires_at": "2026-12-31T23:59:59Z"
 }'
 # the response's "token" field is shown once -- save it, e.g. into WALDUR_ACCESS_TOKEN
-waldur-cli team personal-access-token rotate <uuid>   # atomically revoke + reissue
-waldur-cli team personal-access-token delete <uuid>   # revoke
+waldur-cli auth personal-access-token rotate <uuid>   # atomically revoke + reissue
+waldur-cli auth personal-access-token delete <uuid>   # revoke
+
+waldur-cli auth ssh-key create --request '{"name": "laptop", "public_key": "'"$(cat ~/.ssh/id_ed25519.pub)"'"}'
+waldur-cli auth ssh-key list
 ```
 
 ### whoami

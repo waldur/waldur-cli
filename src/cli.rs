@@ -10,6 +10,9 @@ pub enum GroupCommand {
     ///Browse offerings and provision resources of any offering type
     #[command(subcommand)]
     Marketplace(MarketplaceCommand),
+    ///Manage your own authentication credentials (personal access tokens, SSH keys)
+    #[command(subcommand)]
+    Auth(AuthCommand),
 }
 ///Manage OpenStack resources
 #[derive(clap::Subcommand, Debug)]
@@ -57,11 +60,6 @@ pub enum TeamCommand {
     ///Roles
     #[command(subcommand)]
     Role(crate::commands::team::role::RoleCommand),
-    ///Personal access tokens (named, scoped, time-limited API credentials)
-    #[command(subcommand)]
-    PersonalAccessToken(
-        crate::commands::team::personal_access_token::PersonalAccessTokenCommand,
-    ),
 }
 ///Browse offerings and provision resources of any offering type
 #[derive(clap::Subcommand, Debug)]
@@ -75,6 +73,18 @@ pub enum MarketplaceCommand {
     ///Marketplace orders (check status of a submitted provision/terminate)
     #[command(subcommand)]
     Order(crate::commands::marketplace::order::OrderCommand),
+}
+///Manage your own authentication credentials (personal access tokens, SSH keys)
+#[derive(clap::Subcommand, Debug)]
+pub enum AuthCommand {
+    ///Personal access tokens (named, scoped, time-limited API credentials)
+    #[command(subcommand)]
+    PersonalAccessToken(
+        crate::commands::auth::personal_access_token::PersonalAccessTokenCommand,
+    ),
+    ///SSH public keys
+    #[command(subcommand)]
+    SshKey(crate::commands::auth::ssh_key::SshKeyCommand),
 }
 pub async fn dispatch(
     base_url: &str,
@@ -234,17 +244,6 @@ pub async fn dispatch(
                         )
                         .await
                 }
-                TeamCommand::PersonalAccessToken(cmd) => {
-                    crate::commands::team::personal_access_token::run(
-                            base_url,
-                            token,
-                            project,
-                            dry_run,
-                            cmd,
-                            format,
-                        )
-                        .await
-                }
             }
         }
         GroupCommand::Marketplace(cmd) => {
@@ -273,6 +272,32 @@ pub async fn dispatch(
                 }
                 MarketplaceCommand::Order(cmd) => {
                     crate::commands::marketplace::order::run(
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+            }
+        }
+        GroupCommand::Auth(cmd) => {
+            match cmd {
+                AuthCommand::PersonalAccessToken(cmd) => {
+                    crate::commands::auth::personal_access_token::run(
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+                AuthCommand::SshKey(cmd) => {
+                    crate::commands::auth::ssh_key::run(
                             base_url,
                             token,
                             project,

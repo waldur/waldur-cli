@@ -17,7 +17,7 @@ hand-maintained layer for it to drift against.
 **Generated, don't edit by hand:**
 
 - `src/commands/` -- every resource's `Args` structs, `Command` enum, and `run()` dispatch
-- `src/cli.rs` -- the top-level `openstack`/`team`/`marketplace` group wiring
+- `src/cli.rs` -- the top-level `openstack`/`team`/`marketplace`/`auth` group wiring
 - `src/schema.rs` -- the CLI's command surface as JSON, embedded for `waldur-cli schema`
   (a machine-readable tool spec for LLM agents)
 

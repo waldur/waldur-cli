@@ -4460,177 +4460,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
       "type": "delete"
     },
     {
-      "api_endpoint": "/api/personal-access-tokens/",
-      "description": "List personal access tokens (named, scoped, time-limited api credentials)",
-      "http_method": "GET",
-      "output": {
-        "default_columns": [
-          "uuid",
-          "name",
-          "token_prefix",
-          "expires_at",
-          "is_active"
-        ],
-        "type": "array"
-      },
-      "parameters": [
-        {
-          "description": "Fetch only these fields from the API",
-          "name": "--fields",
-          "repeatable": true,
-          "type": "string"
-        },
-        {
-          "description": "JMESPath expression for client-side output reshaping",
-          "name": "--jmespath",
-          "type": "string"
-        },
-        {
-          "description": "Maximum number of items to return",
-          "name": "--limit",
-          "type": "integer"
-        },
-        {
-          "description": "Output format",
-          "global": true,
-          "name": "--format",
-          "type": "string",
-          "valid_values": [
-            "table",
-            "json",
-            "tsv",
-            "toon",
-            "ndjson"
-          ]
-        }
-      ],
-      "path": [
-        "team",
-        "personal-access-token",
-        "list"
-      ],
-      "type": "list"
-    },
-    {
-      "api_endpoint": "/api/personal-access-tokens/{uuid}/",
-      "description": "Get personal access tokens (named, scoped, time-limited api credentials)",
-      "http_method": "GET",
-      "parameters": [
-        {
-          "description": "uuid of the resource",
-          "name": "uuid",
-          "positional": true,
-          "required": true,
-          "type": "string"
-        },
-        {
-          "description": "Output format",
-          "global": true,
-          "name": "--format",
-          "type": "string",
-          "valid_values": [
-            "table",
-            "json",
-            "tsv",
-            "toon",
-            "ndjson"
-          ]
-        }
-      ],
-      "path": [
-        "team",
-        "personal-access-token",
-        "get"
-      ],
-      "type": "get"
-    },
-    {
-      "api_endpoint": "/api/personal-access-tokens/",
-      "description": "Create personal access tokens (named, scoped, time-limited api credentials)",
-      "http_method": "POST",
-      "parameters": [
-        {
-          "description": "Request body as inline JSON",
-          "name": "--request",
-          "type": "json"
-        },
-        {
-          "description": "Read the request body from a JSON or YAML file",
-          "name": "--request-file",
-          "type": "path"
-        },
-        {
-          "description": "Print a fillable request-body template and exit",
-          "name": "--generate-skeleton",
-          "type": "enum",
-          "valid_values": [
-            "json",
-            "yaml"
-          ]
-        },
-        {
-          "description": "Output format",
-          "global": true,
-          "name": "--format",
-          "type": "string",
-          "valid_values": [
-            "table",
-            "json",
-            "tsv",
-            "toon",
-            "ndjson"
-          ]
-        }
-      ],
-      "path": [
-        "team",
-        "personal-access-token",
-        "create"
-      ],
-      "request_skeleton": {
-        "allowed_scopes": null,
-        "expires_at": "",
-        "name": "",
-        "scopes": [
-          ""
-        ]
-      },
-      "type": "create"
-    },
-    {
-      "api_endpoint": "/api/personal-access-tokens/{uuid}/",
-      "description": "Delete personal access tokens (named, scoped, time-limited api credentials)",
-      "http_method": "DELETE",
-      "parameters": [
-        {
-          "description": "uuid of the resource",
-          "name": "uuid",
-          "positional": true,
-          "required": true,
-          "type": "string"
-        },
-        {
-          "description": "Output format",
-          "global": true,
-          "name": "--format",
-          "type": "string",
-          "valid_values": [
-            "table",
-            "json",
-            "tsv",
-            "toon",
-            "ndjson"
-          ]
-        }
-      ],
-      "path": [
-        "team",
-        "personal-access-token",
-        "delete"
-      ],
-      "type": "delete"
-    },
-    {
       "api_endpoint": "/api/marketplace-public-offerings/",
       "description": "List marketplace offerings (public)",
       "http_method": "GET",
@@ -5466,6 +5295,411 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
       "type": "get"
     },
     {
+      "api_endpoint": "/api/personal-access-tokens/",
+      "description": "List personal access tokens (named, scoped, time-limited api credentials)",
+      "http_method": "GET",
+      "output": {
+        "default_columns": [
+          "uuid",
+          "name",
+          "token_prefix",
+          "expires_at",
+          "is_active"
+        ],
+        "type": "array"
+      },
+      "parameters": [
+        {
+          "description": "Fetch only these fields from the API",
+          "name": "--fields",
+          "repeatable": true,
+          "type": "string"
+        },
+        {
+          "description": "JMESPath expression for client-side output reshaping",
+          "name": "--jmespath",
+          "type": "string"
+        },
+        {
+          "description": "Maximum number of items to return",
+          "name": "--limit",
+          "type": "integer"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "personal-access-token",
+        "list"
+      ],
+      "type": "list"
+    },
+    {
+      "api_endpoint": "/api/personal-access-tokens/{uuid}/",
+      "description": "Get personal access tokens (named, scoped, time-limited api credentials)",
+      "http_method": "GET",
+      "parameters": [
+        {
+          "description": "uuid of the resource",
+          "name": "uuid",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "personal-access-token",
+        "get"
+      ],
+      "type": "get"
+    },
+    {
+      "api_endpoint": "/api/personal-access-tokens/",
+      "description": "Create personal access tokens (named, scoped, time-limited api credentials)",
+      "http_method": "POST",
+      "parameters": [
+        {
+          "description": "Request body as inline JSON",
+          "name": "--request",
+          "type": "json"
+        },
+        {
+          "description": "Read the request body from a JSON or YAML file",
+          "name": "--request-file",
+          "type": "path"
+        },
+        {
+          "description": "Print a fillable request-body template and exit",
+          "name": "--generate-skeleton",
+          "type": "enum",
+          "valid_values": [
+            "json",
+            "yaml"
+          ]
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "personal-access-token",
+        "create"
+      ],
+      "request_skeleton": {
+        "allowed_scopes": null,
+        "expires_at": "",
+        "name": "",
+        "scopes": [
+          ""
+        ]
+      },
+      "type": "create"
+    },
+    {
+      "api_endpoint": "/api/personal-access-tokens/{uuid}/",
+      "description": "Delete personal access tokens (named, scoped, time-limited api credentials)",
+      "http_method": "DELETE",
+      "parameters": [
+        {
+          "description": "uuid of the resource",
+          "name": "uuid",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "personal-access-token",
+        "delete"
+      ],
+      "type": "delete"
+    },
+    {
+      "api_endpoint": "/api/keys/",
+      "description": "List ssh public keys",
+      "http_method": "GET",
+      "output": {
+        "default_columns": [
+          "uuid",
+          "name",
+          "fingerprint_md5",
+          "is_shared"
+        ],
+        "type": "array"
+      },
+      "parameters": [
+        {
+          "description": "Server-side filter",
+          "name": "--filter",
+          "repeatable": true,
+          "type": "KEY=VALUE",
+          "valid_keys": [
+            {
+              "key": "created",
+              "type": "string"
+            },
+            {
+              "key": "created_before",
+              "type": "string"
+            },
+            {
+              "key": "fingerprint_md5",
+              "type": "string"
+            },
+            {
+              "key": "fingerprint_sha256",
+              "type": "string"
+            },
+            {
+              "key": "fingerprint_sha512",
+              "type": "string"
+            },
+            {
+              "key": "is_shared",
+              "type": "boolean"
+            },
+            {
+              "key": "modified",
+              "type": "string"
+            },
+            {
+              "key": "modified_before",
+              "type": "string"
+            },
+            {
+              "key": "name",
+              "type": "string"
+            },
+            {
+              "key": "name_exact",
+              "type": "string"
+            },
+            {
+              "key": "o",
+              "type": "string"
+            },
+            {
+              "key": "user_uuid",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "description": "Fetch only these fields from the API",
+          "name": "--fields",
+          "repeatable": true,
+          "type": "string",
+          "valid_values": [
+            "fingerprint_md5",
+            "fingerprint_sha256",
+            "fingerprint_sha512",
+            "is_shared",
+            "name",
+            "public_key",
+            "type",
+            "url",
+            "user_uuid",
+            "uuid"
+          ]
+        },
+        {
+          "description": "JMESPath expression for client-side output reshaping",
+          "name": "--jmespath",
+          "type": "string"
+        },
+        {
+          "description": "Maximum number of items to return",
+          "name": "--limit",
+          "type": "integer"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "ssh-key",
+        "list"
+      ],
+      "type": "list"
+    },
+    {
+      "api_endpoint": "/api/keys/{uuid}/",
+      "description": "Get ssh public keys",
+      "http_method": "GET",
+      "parameters": [
+        {
+          "description": "uuid of the resource",
+          "name": "uuid",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "ssh-key",
+        "get"
+      ],
+      "type": "get"
+    },
+    {
+      "api_endpoint": "/api/keys/",
+      "description": "Create ssh public keys",
+      "http_method": "POST",
+      "parameters": [
+        {
+          "description": "Request body as inline JSON",
+          "name": "--request",
+          "type": "json"
+        },
+        {
+          "description": "Read the request body from a JSON or YAML file",
+          "name": "--request-file",
+          "type": "path"
+        },
+        {
+          "description": "Print a fillable request-body template and exit",
+          "name": "--generate-skeleton",
+          "type": "enum",
+          "valid_values": [
+            "json",
+            "yaml"
+          ]
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "ssh-key",
+        "create"
+      ],
+      "request_skeleton": {
+        "name": null,
+        "public_key": ""
+      },
+      "type": "create"
+    },
+    {
+      "api_endpoint": "/api/keys/{uuid}/",
+      "description": "Delete ssh public keys",
+      "http_method": "DELETE",
+      "parameters": [
+        {
+          "description": "uuid of the resource",
+          "name": "uuid",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "auth",
+        "ssh-key",
+        "delete"
+      ],
+      "type": "delete"
+    },
+    {
       "description": "Print the CLI command schema as JSON",
       "parameters": [
         {
@@ -5776,23 +6010,6 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
             "update",
             "delete"
           ]
-        },
-        {
-          "default_columns": [
-            "uuid",
-            "name",
-            "token_prefix",
-            "expires_at",
-            "is_active"
-          ],
-          "description": "Personal access tokens (named, scoped, time-limited API credentials)",
-          "name": "personal-access-token",
-          "verbs": [
-            "list",
-            "get",
-            "create",
-            "delete"
-          ]
         }
       ]
     },
@@ -5841,6 +6058,45 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
           "name": "order",
           "verbs": [
             "get"
+          ]
+        }
+      ]
+    },
+    {
+      "description": "Manage your own authentication credentials (personal access tokens, SSH keys)",
+      "name": "auth",
+      "resources": [
+        {
+          "default_columns": [
+            "uuid",
+            "name",
+            "token_prefix",
+            "expires_at",
+            "is_active"
+          ],
+          "description": "Personal access tokens (named, scoped, time-limited API credentials)",
+          "name": "personal-access-token",
+          "verbs": [
+            "list",
+            "get",
+            "create",
+            "delete"
+          ]
+        },
+        {
+          "default_columns": [
+            "uuid",
+            "name",
+            "fingerprint_md5",
+            "is_shared"
+          ],
+          "description": "SSH public keys",
+          "name": "ssh-key",
+          "verbs": [
+            "list",
+            "get",
+            "create",
+            "delete"
           ]
         }
       ]

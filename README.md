@@ -9,9 +9,10 @@ It covers a curated slice of the API:
 
 - **OpenStack** — tenants, instances, volumes, networks, subnets, security groups, floating
   IPs, plus the flavor/image catalog
-- **Team management** — customers, projects, users, roles, personal access tokens
+- **Team management** — customers, projects, users, roles
 - **Marketplace** — browse offerings, and provision/terminate OpenStack tenants, instances,
   and volumes through Waldur's order flow
+- **Auth** — manage your own personal access tokens and SSH keys
 
 Every command follows the same shape — `waldur-cli <group> <resource> <verb>` — and the same
 verbs (`list`, `get`, `create`, `update`, `delete`, plus `provision`/`terminate` for
