@@ -380,6 +380,10 @@ fn run_update() -> anyhow::Result<()> {
         .repo_owner("waldur")
         .repo_name("waldur-cli")
         .bin_name("waldur-cli")
+        // cargo-dist archives nest the binary in a `{bin}-{target}/` directory
+        // rather than at the archive root, which is what `bin_name` alone
+        // configures `self_update` to expect.
+        .bin_path_in_archive("waldur-cli-{{ target }}/{{ bin }}")
         .show_download_progress(true)
         .current_version(self_update::cargo_crate_version!())
         .build()?
