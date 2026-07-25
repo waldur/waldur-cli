@@ -51,29 +51,6 @@ pub enum TeamCommand {
     ///Roles
     #[command(subcommand)]
     Role(crate::commands::team::role::RoleCommand),
-    ///User invitations
-    #[command(subcommand)]
-    UserInvitation(crate::commands::team::user_invitation::UserInvitationCommand),
-    ///Organization groups
-    #[command(subcommand)]
-    OrganizationGroup(
-        crate::commands::team::organization_group::OrganizationGroupCommand,
-    ),
-    ///Customer permission reviews (read-only)
-    #[command(subcommand)]
-    CustomerPermissionsReview(
-        crate::commands::team::customer_permissions_review::CustomerPermissionsReviewCommand,
-    ),
-    ///Project permission reviews (read-only)
-    #[command(subcommand)]
-    ProjectPermissionsReview(
-        crate::commands::team::project_permissions_review::ProjectPermissionsReviewCommand,
-    ),
-    ///User permission requests (read-only)
-    #[command(subcommand)]
-    UserPermissionRequest(
-        crate::commands::team::user_permission_request::UserPermissionRequestCommand,
-    ),
 }
 ///Browse offerings and provision resources of any offering type
 #[derive(clap::Subcommand, Debug)]
@@ -215,61 +192,6 @@ pub async fn dispatch(
                 }
                 TeamCommand::Role(cmd) => {
                     crate::commands::team::role::run(
-                            base_url,
-                            token,
-                            project,
-                            dry_run,
-                            cmd,
-                            format,
-                        )
-                        .await
-                }
-                TeamCommand::UserInvitation(cmd) => {
-                    crate::commands::team::user_invitation::run(
-                            base_url,
-                            token,
-                            project,
-                            dry_run,
-                            cmd,
-                            format,
-                        )
-                        .await
-                }
-                TeamCommand::OrganizationGroup(cmd) => {
-                    crate::commands::team::organization_group::run(
-                            base_url,
-                            token,
-                            project,
-                            dry_run,
-                            cmd,
-                            format,
-                        )
-                        .await
-                }
-                TeamCommand::CustomerPermissionsReview(cmd) => {
-                    crate::commands::team::customer_permissions_review::run(
-                            base_url,
-                            token,
-                            project,
-                            dry_run,
-                            cmd,
-                            format,
-                        )
-                        .await
-                }
-                TeamCommand::ProjectPermissionsReview(cmd) => {
-                    crate::commands::team::project_permissions_review::run(
-                            base_url,
-                            token,
-                            project,
-                            dry_run,
-                            cmd,
-                            format,
-                        )
-                        .await
-                }
-                TeamCommand::UserPermissionRequest(cmd) => {
-                    crate::commands::team::user_permission_request::run(
                             base_url,
                             token,
                             project,

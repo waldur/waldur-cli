@@ -9,8 +9,7 @@ It covers a curated slice of the API:
 
 - **OpenStack** — tenants, instances, volumes, networks, subnets, security groups, floating
   IPs
-- **Team management** — customers, projects, users, roles, invitations, organization groups,
-  permission reviews
+- **Team management** — customers, projects, users, roles
 - **Marketplace** — browse offerings, and provision/terminate OpenStack tenants, instances,
   and volumes through Waldur's order flow
 
