@@ -89,25 +89,9 @@ The full guide lives in [`docs/`](docs/):
 6. [Troubleshooting](docs/6-troubleshooting.md) — errors, `--debug`, exit codes, and shell
    completions
 
-## Development
-
-`src/commands/`, `src/cli.rs`, and `src/schema.rs` are generated from Waldur's OpenAPI schema by
-[waldur-cli-generator](https://code.opennodecloud.com/waldur/waldur-cli-generator) — don't edit
-them by hand; see that repo for how to regenerate. The rest of `src/` (`lib.rs`, `main.rs`,
-`config.rs`, `output.rs`, `pagination.rs`, `http.rs`, `request.rs`, `filter.rs`, `query.rs`,
-`order.rs`, `progress.rs`) is hand-written and permanent.
-
-The crate is split into a library (everything except the `Cli`/`main()` entry point in
-`main.rs`) and a thin binary, so `tests/` can exercise the actual logic directly:
-
-```bash
-cargo test --locked
-cargo clippy --all-targets
-```
-
-Networked code (`pagination`, `http`, `order`) is tested against an in-process HTTP mock
-([`wiremock`](https://docs.rs/wiremock)) rather than a live Waldur instance — see `tests/*.rs`
-for examples. CI runs both `cargo test` and `cargo clippy` on every merge request.
+Contributing to `waldur-cli` itself (not just using it)? See
+[docs/development.md](docs/development.md) — the generator/target repo split, building and
+testing, regenerating the command surface, and cutting a release.
 
 ## License
 
