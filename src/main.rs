@@ -2,7 +2,7 @@ use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use waldur_cli::output::{self, OutputFormat};
-use waldur_cli::{cli, config, http, progress, schema};
+use waldur_cli::{cli, config, http, progress, schema, web};
 
 /// Scriptable CLI for Waldur MasterMind, covering OpenStack resource
 /// management and team/organization management. Generated command surface
@@ -49,6 +49,13 @@ struct Cli {
     /// `set-project`).
     #[arg(long, global = true)]
     project: Option<String>,
+
+    /// Base URL of Waldur's web UI (HomePort), used by `get --web`. Falls
+    /// back to the WALDUR_HOMEPORT_URL env var, then the `HOMEPORT_URL`
+    /// Waldur's own `/api/configuration/` endpoint reports -- only needed if
+    /// that's wrong or unreachable for your deployment.
+    #[arg(long, global = true)]
+    homeport_url: Option<String>,
 }
 
 // Flattens the generated `cli::GroupCommand` variants (openstack/team) in
@@ -202,6 +209,8 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
     // Let the order-polling spinner know to stay quiet under --debug (its
     // request trace already reports each poll).
     progress::set_debug(cli.debug);
+
+    web::set_override(cli.homeport_url.clone().or_else(|| std::env::var("WALDUR_HOMEPORT_URL").ok()));
 
     if cli.debug {
         // reqwest-tracing records request/response fields (method, url,

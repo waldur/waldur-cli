@@ -28,6 +28,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("tenant", crate::filter::FilterKind::Str),
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];
+const INSTANCE_WEB_PATH: &str = "/resource-details/{uuid}";
 const UPDATE_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\"\n}";
 const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"config_drive\": null,\n    \"connect_directly_to_external_network\": null,\n    \"data_volume_size\": null,\n    \"data_volume_type\": null,\n    \"data_volumes\": null,\n    \"description\": null,\n    \"flavor\": \"\",\n    \"floating_ips\": null,\n    \"image\": \"\",\n    \"name\": \"\",\n    \"ports\": [\n      {\n        \"fixed_ips\": null,\n        \"port\": null,\n        \"port_security_enabled\": null,\n        \"subnet\": null\n      }\n    ],\n    \"security_groups\": null,\n    \"server_group\": null,\n    \"ssh_public_key\": null,\n    \"system_volume_size\": 0,\n    \"system_volume_type\": null,\n    \"user_data\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
@@ -159,6 +160,10 @@ pub struct InstanceListArgs {
 #[derive(clap::Args, Debug)]
 pub struct InstanceGetArgs {
     pub uuid: String,
+    /// Open this resource's page in Waldur's web UI (HomePort)
+    /// instead of printing it.
+    #[arg(long)]
+    pub web: bool,
 }
 #[derive(clap::Args, Debug)]
 #[command(
@@ -367,6 +372,23 @@ pub async fn run(
                     None,
                 )
                 .await?;
+            if args.web {
+                let id = result
+                    .get("marketplace_resource_uuid")
+                    .and_then(|v| v.as_str())
+                    .with_context(|| {
+                        format!(
+                            "response has no `{}` field needed to build the HomePort URL",
+                            "marketplace_resource_uuid"
+                        )
+                    })?;
+                let homeport = crate::web::resolve_homeport_url(base_url, token).await?;
+                let url = format!(
+                    "{homeport}{}", INSTANCE_WEB_PATH.replace("{uuid}", id)
+                );
+                crate::web::open_in_browser(&url);
+                return Ok(());
+            }
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         InstanceCommand::Update(args) => {

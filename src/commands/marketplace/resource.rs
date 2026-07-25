@@ -48,6 +48,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("visible_to_providers", crate::filter::FilterKind::Bool),
     ("visible_to_username", crate::filter::FilterKind::Str),
 ];
+const RESOURCE_WEB_PATH: &str = "/resource-details/{uuid}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"description\": null,\n    \"name\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
 ///Marketplace resources (provision/terminate any offering)
 #[derive(clap::Subcommand, Debug)]
@@ -178,6 +179,10 @@ pub struct ResourceListArgs {
 #[derive(clap::Args, Debug)]
 pub struct ResourceGetArgs {
     pub uuid: String,
+    /// Open this resource's page in Waldur's web UI (HomePort)
+    /// instead of printing it.
+    #[arg(long)]
+    pub web: bool,
 }
 #[derive(clap::Args, Debug)]
 #[command(
@@ -337,6 +342,15 @@ pub async fn run(
                     None,
                 )
                 .await?;
+            if args.web {
+                let id = args.uuid.as_str();
+                let homeport = crate::web::resolve_homeport_url(base_url, token).await?;
+                let url = format!(
+                    "{homeport}{}", RESOURCE_WEB_PATH.replace("{uuid}", id)
+                );
+                crate::web::open_in_browser(&url);
+                return Ok(());
+            }
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         ResourceCommand::Provision(args) => {

@@ -2,6 +2,7 @@
 //! see that repo's README for how to regenerate.
 #![allow(clippy::too_many_arguments)]
 const COLUMNS: &[&str; 4usize] = &["uuid", "state", "resource_uuid", "error_message"];
+const ORDER_WEB_PATH: &str = "/marketplace-order-details/{uuid}/";
 ///Marketplace orders (check status of a submitted provision/terminate)
 #[derive(clap::Subcommand, Debug)]
 pub enum OrderCommand {
@@ -27,6 +28,10 @@ pub enum OrderCommand {
 #[derive(clap::Args, Debug)]
 pub struct OrderGetArgs {
     pub uuid: String,
+    /// Open this resource's page in Waldur's web UI (HomePort)
+    /// instead of printing it.
+    #[arg(long)]
+    pub web: bool,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderWaitArgs {
@@ -91,6 +96,13 @@ pub async fn run(
                     None,
                 )
                 .await?;
+            if args.web {
+                let id = args.uuid.as_str();
+                let homeport = crate::web::resolve_homeport_url(base_url, token).await?;
+                let url = format!("{homeport}{}", ORDER_WEB_PATH.replace("{uuid}", id));
+                crate::web::open_in_browser(&url);
+                return Ok(());
+            }
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         OrderCommand::Wait(args) => {

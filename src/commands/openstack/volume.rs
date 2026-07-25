@@ -31,6 +31,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("tenant", crate::filter::FilterKind::Str),
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];
+const VOLUME_WEB_PATH: &str = "/resource-details/{uuid}";
 const UPDATE_SKELETON: &str = "{\n  \"bootable\": null,\n  \"description\": null,\n  \"name\": \"\"\n}";
 const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"bootable\":{\"type\":\"boolean\"},\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"image\": null,\n    \"name\": \"\",\n    \"size\": null,\n    \"type\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
@@ -143,6 +144,10 @@ pub struct VolumeListArgs {
 #[derive(clap::Args, Debug)]
 pub struct VolumeGetArgs {
     pub uuid: String,
+    /// Open this resource's page in Waldur's web UI (HomePort)
+    /// instead of printing it.
+    #[arg(long)]
+    pub web: bool,
 }
 #[derive(clap::Args, Debug)]
 #[command(
@@ -339,6 +344,21 @@ pub async fn run(
                     None,
                 )
                 .await?;
+            if args.web {
+                let id = result
+                    .get("marketplace_resource_uuid")
+                    .and_then(|v| v.as_str())
+                    .with_context(|| {
+                        format!(
+                            "response has no `{}` field needed to build the HomePort URL",
+                            "marketplace_resource_uuid"
+                        )
+                    })?;
+                let homeport = crate::web::resolve_homeport_url(base_url, token).await?;
+                let url = format!("{homeport}{}", VOLUME_WEB_PATH.replace("{uuid}", id));
+                crate::web::open_in_browser(&url);
+                return Ok(());
+            }
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         VolumeCommand::Update(args) => {

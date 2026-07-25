@@ -178,3 +178,27 @@ use `list` with a `uuid` filter and `--jmespath`:
 ```bash
 waldur-cli openstack instance get <uuid> --format json | jq '{name, state}'
 ```
+
+## Opening a resource in the browser: `get --web`
+
+Resources with a page in Waldur's web UI (HomePort) get a `--web` flag on `get` -- prints and
+opens the resource's HomePort URL instead of the object itself, in the style of `gh pr view
+--web`/`glab issue view --web`:
+
+```bash
+waldur-cli team project get <uuid> --web
+waldur-cli openstack instance get <uuid> --web
+```
+
+Not every resource has a HomePort route, so `--web` only appears on `get --help` where it
+does -- currently `team project`/`team customer`, `marketplace resource`/`marketplace order`,
+and `openstack tenant`/`instance`/`volume` (the latter three go through the generic
+marketplace resource-details page, since OpenStack resources have no dedicated route of their
+own).
+
+HomePort's base URL is discovered automatically from Waldur's `/api/configuration/` endpoint.
+If that's wrong or unreachable for your deployment, override it with `--homeport-url` or the
+`WALDUR_HOMEPORT_URL` env var.
+
+Opening a browser is best-effort: over SSH or in any headless environment there's nothing to
+open, so the URL is always printed first regardless of whether a browser actually launches.

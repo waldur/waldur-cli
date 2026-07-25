@@ -18,3 +18,4 @@ pub mod query;
 pub mod request;
 pub mod schema;
 pub mod wait;
+pub mod web;

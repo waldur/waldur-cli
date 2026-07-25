@@ -22,6 +22,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("service_settings_uuid", crate::filter::FilterKind::Str),
     ("state", crate::filter::FilterKind::Str),
 ];
+const TENANT_WEB_PATH: &str = "/resource-details/{uuid}";
 const UPDATE_SKELETON: &str = "{\n  \"availability_zone\": null,\n  \"default_volume_type_name\": null,\n  \"description\": null,\n  \"name\": \"\",\n  \"security_groups\": null,\n  \"skip_creation_of_default_router\": null,\n  \"skip_creation_of_default_subnet\": null\n}";
 const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"availability_zone\":{\"type\":\"string\"},\"default_volume_type_name\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"security_groups\":{\"items\":{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"rules\":{\"items\":{\"properties\":{\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"direction\":{\"allOf\":[{\"enum\":[\"ingress\",\"egress\"]}]},\"ethertype\":{\"allOf\":[{\"enum\":[\"IPv4\",\"IPv6\"]}]},\"from_port\":{\"type\":\"integer\"},\"protocol\":{\"type\":\"string\"},\"remote_group\":{\"format\":\"uri\",\"type\":\"string\"},\"to_port\":{\"type\":\"integer\"}},\"required\":[],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"name\"],\"type\":\"object\"},\"type\":\"array\"},\"skip_creation_of_default_router\":{\"type\":\"boolean\"},\"skip_creation_of_default_subnet\":{\"type\":\"boolean\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"name\": \"\",\n    \"security_groups\": null,\n    \"skip_connection_extnet\": null,\n    \"skip_creation_of_default_router\": null,\n    \"skip_creation_of_default_subnet\": null,\n    \"subnet_cidr\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
@@ -117,6 +118,10 @@ pub struct TenantListArgs {
 #[derive(clap::Args, Debug)]
 pub struct TenantGetArgs {
     pub uuid: String,
+    /// Open this resource's page in Waldur's web UI (HomePort)
+    /// instead of printing it.
+    #[arg(long)]
+    pub web: bool,
 }
 #[derive(clap::Args, Debug)]
 #[command(
@@ -301,6 +306,21 @@ pub async fn run(
                     None,
                 )
                 .await?;
+            if args.web {
+                let id = result
+                    .get("marketplace_resource_uuid")
+                    .and_then(|v| v.as_str())
+                    .with_context(|| {
+                        format!(
+                            "response has no `{}` field needed to build the HomePort URL",
+                            "marketplace_resource_uuid"
+                        )
+                    })?;
+                let homeport = crate::web::resolve_homeport_url(base_url, token).await?;
+                let url = format!("{homeport}{}", TENANT_WEB_PATH.replace("{uuid}", id));
+                crate::web::open_in_browser(&url);
+                return Ok(());
+            }
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         TenantCommand::Update(args) => {

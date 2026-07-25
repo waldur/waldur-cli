@@ -22,6 +22,7 @@ jmespath = "0.5"
 # resolve remote $refs over HTTP -- unneeded here, since every request-body
 # schema is fully dereferenced/self-contained at generation time.
 jsonschema = { version = "0.48", default-features = false }
+open = "5.4.0"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 reqwest-middleware = "0.4"
 reqwest-tracing = "0.5"

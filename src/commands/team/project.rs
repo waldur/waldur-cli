@@ -33,6 +33,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("user_uuid", crate::filter::FilterKind::Str),
     ("user_uuid_with_active_role", crate::filter::FilterKind::Str),
 ];
+const PROJECT_WEB_PATH: &str = "/projects/{uuid}/";
 const CREATE_SKELETON: &str = "{\n  \"affiliation_uuid\": null,\n  \"backend_id\": null,\n  \"customer\": \"\",\n  \"description\": null,\n  \"end_date\": null,\n  \"grace_period_days\": null,\n  \"image\": null,\n  \"is_industry\": null,\n  \"kind\": null,\n  \"name\": \"\",\n  \"oecd_fos_2007_code\": null,\n  \"science_sub_domain\": null,\n  \"slug\": null,\n  \"staff_notes\": null,\n  \"start_date\": null,\n  \"type\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null\n}";
 const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"affiliation_uuid\":{\"format\":\"uuid\",\"type\":\"string\"},\"backend_id\":{\"type\":\"string\"},\"customer\":{\"format\":\"uri\",\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"end_date\":{\"format\":\"date\",\"type\":\"string\"},\"grace_period_days\":{\"type\":\"integer\"},\"image\":{\"format\":\"binary\",\"type\":\"string\"},\"is_industry\":{\"type\":\"boolean\"},\"kind\":{\"allOf\":[{\"enum\":[\"default\",\"course\",\"public\"]}]},\"name\":{\"type\":\"string\"},\"oecd_fos_2007_code\":{\"oneOf\":[{\"enum\":[\"1.1\",\"1.2\",\"1.3\",\"1.4\",\"1.5\",\"1.6\",\"1.7\",\"2.1\",\"2.2\",\"2.3\",\"2.4\",\"2.5\",\"2.6\",\"2.7\",\"2.8\",\"2.9\",\"2.10\",\"2.11\",\"2.12\",\"3.1\",\"3.2\",\"3.3\",\"3.4\",\"3.5\",\"4.1\",\"4.2\",\"4.3\",\"4.4\",\"4.5\",\"5.1\",\"5.2\",\"5.3\",\"5.4\",\"5.5\",\"5.6\",\"5.7\",\"5.8\",\"5.9\",\"6.1\",\"6.2\",\"6.3\",\"6.4\",\"6.5\"]},{\"enum\":[\"\"]},{\"enum\":[\"null\"]}]},\"science_sub_domain\":{\"format\":\"uuid\",\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"staff_notes\":{\"type\":\"string\"},\"start_date\":{\"format\":\"date\",\"type\":\"string\"},\"type\":{\"format\":\"uri\",\"type\":\"string\"},\"user_affiliations\":{\"type\":\"object\"},\"user_email_patterns\":{\"type\":\"object\"},\"user_identity_sources\":{\"type\":\"object\"}},\"required\":[\"customer\",\"name\"],\"type\":\"object\"}";
 const UPDATE_SKELETON: &str = "{\n  \"affiliation_uuid\": null,\n  \"backend_id\": null,\n  \"customer\": \"\",\n  \"description\": null,\n  \"end_date\": null,\n  \"grace_period_days\": null,\n  \"image\": null,\n  \"is_industry\": null,\n  \"kind\": null,\n  \"name\": \"\",\n  \"oecd_fos_2007_code\": null,\n  \"science_sub_domain\": null,\n  \"slug\": null,\n  \"staff_notes\": null,\n  \"start_date\": null,\n  \"type\": null,\n  \"user_affiliations\": null,\n  \"user_email_patterns\": null,\n  \"user_identity_sources\": null\n}";
@@ -135,6 +136,10 @@ pub struct ProjectListArgs {
 #[derive(clap::Args, Debug)]
 pub struct ProjectGetArgs {
     pub uuid: String,
+    /// Open this resource's page in Waldur's web UI (HomePort)
+    /// instead of printing it.
+    #[arg(long)]
+    pub web: bool,
 }
 #[derive(clap::Args, Debug)]
 #[command(
@@ -284,6 +289,15 @@ pub async fn run(
                     None,
                 )
                 .await?;
+            if args.web {
+                let id = args.uuid.as_str();
+                let homeport = crate::web::resolve_homeport_url(base_url, token).await?;
+                let url = format!(
+                    "{homeport}{}", PROJECT_WEB_PATH.replace("{uuid}", id)
+                );
+                crate::web::open_in_browser(&url);
+                return Ok(());
+            }
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         ProjectCommand::Create(args) => {
