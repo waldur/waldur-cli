@@ -2508,6 +2508,310 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
       "type": "delete"
     },
     {
+      "api_endpoint": "/api/openstack-flavors/",
+      "description": "List openstack flavors (vm sizes)",
+      "http_method": "GET",
+      "output": {
+        "default_columns": [
+          "uuid",
+          "name",
+          "cores",
+          "ram",
+          "disk"
+        ],
+        "type": "array"
+      },
+      "parameters": [
+        {
+          "description": "Server-side filter",
+          "name": "--filter",
+          "repeatable": true,
+          "type": "KEY=VALUE",
+          "valid_keys": [
+            {
+              "key": "cores",
+              "type": "integer"
+            },
+            {
+              "key": "cores__gte",
+              "type": "integer"
+            },
+            {
+              "key": "cores__lte",
+              "type": "integer"
+            },
+            {
+              "key": "disk",
+              "type": "integer"
+            },
+            {
+              "key": "disk__gte",
+              "type": "integer"
+            },
+            {
+              "key": "disk__lte",
+              "type": "integer"
+            },
+            {
+              "key": "name",
+              "type": "string"
+            },
+            {
+              "key": "name_exact",
+              "type": "string"
+            },
+            {
+              "key": "name_iregex",
+              "type": "string"
+            },
+            {
+              "key": "o",
+              "type": "string"
+            },
+            {
+              "key": "offering_uuid",
+              "type": "string"
+            },
+            {
+              "key": "ram",
+              "type": "integer"
+            },
+            {
+              "key": "ram__gte",
+              "type": "integer"
+            },
+            {
+              "key": "ram__lte",
+              "type": "integer"
+            },
+            {
+              "key": "settings",
+              "type": "string"
+            },
+            {
+              "key": "settings_uuid",
+              "type": "string"
+            },
+            {
+              "key": "tenant",
+              "type": "string"
+            },
+            {
+              "key": "tenant_uuid",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "description": "Fetch only these fields from the API",
+          "name": "--fields",
+          "repeatable": true,
+          "type": "string",
+          "valid_values": [
+            "backend_id",
+            "cores",
+            "disk",
+            "display_name",
+            "name",
+            "ram",
+            "settings",
+            "url",
+            "uuid"
+          ]
+        },
+        {
+          "description": "JMESPath expression for client-side output reshaping",
+          "name": "--jmespath",
+          "type": "string"
+        },
+        {
+          "description": "Maximum number of items to return",
+          "name": "--limit",
+          "type": "integer"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "openstack",
+        "flavor",
+        "list"
+      ],
+      "type": "list"
+    },
+    {
+      "api_endpoint": "/api/openstack-flavors/{uuid}/",
+      "description": "Get openstack flavors (vm sizes)",
+      "http_method": "GET",
+      "parameters": [
+        {
+          "description": "uuid of the resource",
+          "name": "uuid",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "openstack",
+        "flavor",
+        "get"
+      ],
+      "type": "get"
+    },
+    {
+      "api_endpoint": "/api/openstack-images/",
+      "description": "List openstack images",
+      "http_method": "GET",
+      "output": {
+        "default_columns": [
+          "uuid",
+          "name",
+          "min_disk",
+          "min_ram"
+        ],
+        "type": "array"
+      },
+      "parameters": [
+        {
+          "description": "Server-side filter",
+          "name": "--filter",
+          "repeatable": true,
+          "type": "KEY=VALUE",
+          "valid_keys": [
+            {
+              "key": "is_rescue_image",
+              "type": "boolean"
+            },
+            {
+              "key": "name",
+              "type": "string"
+            },
+            {
+              "key": "name_exact",
+              "type": "string"
+            },
+            {
+              "key": "offering_uuid",
+              "type": "string"
+            },
+            {
+              "key": "settings",
+              "type": "string"
+            },
+            {
+              "key": "settings_uuid",
+              "type": "string"
+            },
+            {
+              "key": "show_duplicate_names",
+              "type": "boolean"
+            },
+            {
+              "key": "tenant",
+              "type": "string"
+            },
+            {
+              "key": "tenant_uuid",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "description": "Fetch only these fields from the API",
+          "name": "--fields",
+          "repeatable": true,
+          "type": "string"
+        },
+        {
+          "description": "JMESPath expression for client-side output reshaping",
+          "name": "--jmespath",
+          "type": "string"
+        },
+        {
+          "description": "Maximum number of items to return",
+          "name": "--limit",
+          "type": "integer"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "openstack",
+        "image",
+        "list"
+      ],
+      "type": "list"
+    },
+    {
+      "api_endpoint": "/api/openstack-images/{uuid}/",
+      "description": "Get openstack images",
+      "http_method": "GET",
+      "parameters": [
+        {
+          "description": "uuid of the resource",
+          "name": "uuid",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Output format",
+          "global": true,
+          "name": "--format",
+          "type": "string",
+          "valid_values": [
+            "table",
+            "json",
+            "tsv",
+            "toon",
+            "ndjson"
+          ]
+        }
+      ],
+      "path": [
+        "openstack",
+        "image",
+        "get"
+      ],
+      "type": "get"
+    },
+    {
       "api_endpoint": "/api/customers/",
       "description": "List customers (organizations)",
       "http_method": "GET",
@@ -5369,6 +5673,35 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
             "list",
             "get",
             "delete"
+          ]
+        },
+        {
+          "default_columns": [
+            "uuid",
+            "name",
+            "cores",
+            "ram",
+            "disk"
+          ],
+          "description": "OpenStack flavors (VM sizes)",
+          "name": "flavor",
+          "verbs": [
+            "list",
+            "get"
+          ]
+        },
+        {
+          "default_columns": [
+            "uuid",
+            "name",
+            "min_disk",
+            "min_ram"
+          ],
+          "description": "OpenStack images",
+          "name": "image",
+          "verbs": [
+            "list",
+            "get"
           ]
         }
       ]

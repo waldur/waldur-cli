@@ -5,3 +5,5 @@ pub mod network;
 pub mod subnet;
 pub mod security_group;
 pub mod floating_ip;
+pub mod flavor;
+pub mod image;

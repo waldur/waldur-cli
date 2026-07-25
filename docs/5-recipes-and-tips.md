@@ -71,11 +71,38 @@ waldur-cli openstack tenant terminate <marketplace_resource_uuid>
 
 !!! note "Instances need a few things a VPC doesn't"
     An instance order references a `flavor`, an `image`, and a subnet, which live *inside* a
-    tenant. The CLI can provision the instance and list/get the tenant's networks, subnets,
-    and security groups — but it doesn't expose flavor/image browsing or network *creation*,
-    so those URLs come from the API or the Waldur UI. Provision a tenant **without** the
+    tenant. Look the first two up with `openstack flavor list` / `openstack image list` (see
+    below); the CLI can also list/get the tenant's networks, subnets, and security groups, but
+    it doesn't expose network *creation* — provision a tenant **without** the
     `skip_creation_of_default_*` attributes to get a default network + subnet you can point an
     instance at.
+
+### Pick a flavor and image for an instance
+
+Flavors and images are read-only catalog data scoped to a tenant. The flavor filters accept
+range comparisons, so "smallest flavor that meets my requirements" is one call — no
+client-side filtering needed:
+
+```bash
+# smallest flavor with at least 4 cores and 8 GB RAM, in this tenant
+waldur-cli openstack flavor list \
+  --filter tenant_uuid=<tenant-uuid> \
+  --filter cores__gte=4 --filter ram__gte=8192 \
+  --filter o=cores --limit 1
+
+waldur-cli openstack image list --filter tenant_uuid=<tenant-uuid>
+```
+
+`ram`/`disk` are in MB. Each also takes `__lte` (and an exact `cores=`/`ram=`/`disk=`), so you
+can bracket a range from both ends. Feed the chosen rows' `url` fields straight into an
+instance `provision` body:
+
+```bash
+FLAVOR=$(waldur-cli openstack flavor list --filter name_exact=m1.medium \
+  --format json --jmespath '[0].url')
+IMAGE=$(waldur-cli openstack image list --filter name_exact="Ubuntu 24.04" \
+  --format json --jmespath '[0].url')
+```
 
 ### SSH into an instance
 
