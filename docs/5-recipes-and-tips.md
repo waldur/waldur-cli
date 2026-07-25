@@ -77,6 +77,22 @@ waldur-cli openstack tenant terminate <marketplace_resource_uuid>
     `skip_creation_of_default_*` attributes to get a default network + subnet you can point an
     instance at.
 
+### SSH into an instance
+
+There's no dedicated `ssh` command — Waldur doesn't broker a tunnel or manage private keys
+(it only stores the public key's name/fingerprint), so there's nothing for a wrapper to add
+over the system `ssh` binary beyond looking up the address. That's one `--jmespath` away:
+
+```bash
+ssh ubuntu@$(waldur-cli openstack instance get <uuid> --jmespath 'external_ips[0]')
+```
+
+Swap the username for whatever the instance's image actually uses (`ubuntu`, `centos`,
+`cloud-user`, ...) — the API doesn't expose it. If the instance has no floating IP (no public
+address, or you're not on the same network as its `internal_ips`), there's no way in via
+SSH at all; `waldur-cli openstack instance get <uuid> --web` opens its HomePort page, which
+may offer a browser-based console instead.
+
 ### Feed live inventory to an LLM
 
 Minimise tokens: fetch only the fields that matter, and render as TOON.
