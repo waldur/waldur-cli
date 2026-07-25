@@ -48,6 +48,20 @@ for examples. `config.rs` tests use [`serial_test`](https://docs.rs/serial_test)
 per-test `tempfile::TempDir`/`XDG_CONFIG_HOME` override, since env vars and the config file
 path are process-global state that would otherwise race across parallel tests.
 
+### Live end-to-end tests
+
+The tests in this repo are all mock-backed and never touch a real Waldur instance. Live E2E
+coverage -- shelling out to the actual compiled `waldur-cli` binary and verifying results
+against a live API with direct `requests` calls -- lives in a separate repo,
+[waldur-integration-testing](https://code.opennodecloud.com/waldur/waldur-integration-testing)
+(`tests/test_cli.py`, `cli` pytest marker). It covers a full create/get/update/delete lifecycle
+against team management (customer, then a project under it -- the CLI's one area with full
+CRUD) plus a read-only smoke check of the OpenStack command surface and the auth/JSON pipeline
+end-to-end. It runs against a published release binary (the `INSTALL_CLI=true` Docker build
+arg pins a specific `github.com/waldur/waldur-cli` release tag -- bump it there after cutting a
+release meant to be covered), not a local build from source, so it also exercises the actual
+release artifact rather than only this repo's own `cargo test`.
+
 GitLab CI (`.gitlab-ci.yml`) runs all three of the commands above on every merge request and
 on `main`.
 
