@@ -21,8 +21,11 @@ pub fn set_override(url: Option<String>) {
 
 /// Resolves HomePort's base URL (no trailing slash): the `--homeport-url`
 /// override if set, otherwise `HOMEPORT_URL` from Waldur's public
-/// `/api/configuration/` endpoint -- no auth required, so this works even
-/// with an expired/missing token.
+/// `/api/configuration/` endpoint (no auth required, so this works even
+/// with an expired/missing token) -- falling back to `base_url` itself if
+/// that setting isn't configured on this deployment, since HomePort and the
+/// API are conventionally served from the same origin (HomePort at `/`, the
+/// API under `/api/`).
 pub async fn resolve_homeport_url(base_url: &str, token: Option<&str>) -> Result<String> {
     if let Some(url) = HOMEPORT_OVERRIDE.get().cloned().flatten() {
         return Ok(url.trim_end_matches('/').to_string());
@@ -33,9 +36,8 @@ pub async fn resolve_homeport_url(base_url: &str, token: Option<&str>) -> Result
     let url = config
         .get("HOMEPORT_URL")
         .and_then(|v| v.as_str())
-        .context(
-            "Waldur's /api/configuration/ response has no HOMEPORT_URL -- pass --homeport-url explicitly",
-        )?;
+        .filter(|s| !s.is_empty())
+        .unwrap_or(base_url);
     Ok(url.trim_end_matches('/').to_string())
 }
 

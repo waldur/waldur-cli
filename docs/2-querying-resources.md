@@ -196,9 +196,10 @@ and `openstack tenant`/`instance`/`volume` (the latter three go through the gene
 marketplace resource-details page, since OpenStack resources have no dedicated route of their
 own).
 
-HomePort's base URL is discovered automatically from Waldur's `/api/configuration/` endpoint.
-If that's wrong or unreachable for your deployment, override it with `--homeport-url` or the
-`WALDUR_HOMEPORT_URL` env var.
+HomePort's base URL is discovered automatically from Waldur's `/api/configuration/` endpoint,
+falling back to the API URL itself if that deployment doesn't set it (HomePort and the API are
+conventionally served from the same origin). If that's wrong for your deployment, override it
+with `--homeport-url` or the `WALDUR_HOMEPORT_URL` env var.
 
 Opening a browser is best-effort: over SSH or in any headless environment there's nothing to
 open, so the URL is always printed first regardless of whether a browser actually launches.

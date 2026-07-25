@@ -28,7 +28,7 @@ async fn resolves_homeport_url_from_the_configuration_endpoint() {
 }
 
 #[tokio::test]
-async fn errors_clearly_when_the_configuration_response_has_no_homeport_url() {
+async fn falls_back_to_base_url_when_the_configuration_response_has_no_homeport_url() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/api/configuration/"))
@@ -38,8 +38,23 @@ async fn errors_clearly_when_the_configuration_response_has_no_homeport_url() {
         .mount(&server)
         .await;
 
-    let err = waldur_cli::web::resolve_homeport_url(&server.uri(), Some("t")).await.unwrap_err();
+    let url = waldur_cli::web::resolve_homeport_url(&server.uri(), Some("t")).await.unwrap();
 
-    assert!(err.to_string().contains("HOMEPORT_URL"));
-    assert!(err.to_string().contains("--homeport-url"));
+    assert_eq!(url, server.uri());
+}
+
+#[tokio::test]
+async fn falls_back_to_base_url_when_homeport_url_is_blank() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/configuration/"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "HOMEPORT_URL": "",
+        })))
+        .mount(&server)
+        .await;
+
+    let url = waldur_cli::web::resolve_homeport_url(&server.uri(), Some("t")).await.unwrap();
+
+    assert_eq!(url, server.uri());
 }
