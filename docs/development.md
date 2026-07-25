@@ -47,8 +47,31 @@ to replay; POST/PATCH are not, so they fail fast instead.
 Both clients set an explicit request timeout, because reqwest's default is **no** timeout at
 all — an unattended run would otherwise hang forever on a stalled connection.
 
-`reqwest-retry` is pinned to `0.8`: `0.9` requires `reqwest-middleware` 0.5, which requires
-`reqwest` 0.13, cascading an upgrade of the whole HTTP stack for no functional gain.
+### The HTTP stack moves as a unit
+
+`reqwest`, `reqwest-middleware`, `reqwest-retry`, and `reqwest-tracing` are version-locked to
+each other — `reqwest-retry` 0.9 requires `reqwest-middleware` 0.5, which requires `reqwest`
+0.13. Bumping any one of them in isolation produces two incompatible copies of
+`reqwest-middleware` in the tree and a type error at `ClientBuilder::new`, so they're upgraded
+together or not at all.
+
+Keeping `reqwest` on 0.13 specifically also matters: `self_update` depends on 0.13, so any
+older version here means **two** reqwest crates compiled in, and two rustls crypto providers
+(`ring` for 0.12's `rustls-tls`, `aws-lc-rs` for 0.13's `rustls`). Unifying on 0.13 dropped
+`ring` entirely and took ~0.76 MiB off the shipped binary.
+
+Two renames to know if you touch this: 0.12's `rustls-tls` feature is `rustls` in 0.13, and
+`query` became an opt-in feature of `reqwest-middleware` 0.5 (`pagination.rs` needs it).
+
+Nothing in `tests/` exercises TLS — wiremock serves plain HTTP — so after any change here,
+smoke-test a real HTTPS handshake by hand:
+
+```bash
+cargo run -- --api-url https://api.github.com --token dummy team customer list
+```
+
+Any HTTP status coming back (a 403 from GitHub is fine) proves the handshake succeeded; a
+crypto-provider or TLS misconfiguration fails before that with a connection error instead.
 
 ## Building and testing
 

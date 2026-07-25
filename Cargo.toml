@@ -23,14 +23,12 @@ jmespath = "0.5"
 # schema is fully dereferenced/self-contained at generation time.
 jsonschema = { version = "0.48", default-features = false }
 open = "5.4.0"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
-reqwest-middleware = "0.4"
-# Pinned to 0.8, not the newer 0.9: 0.9 requires reqwest-middleware 0.5, which
-# in turn requires reqwest 0.13 -- a cascading upgrade of the whole HTTP stack
-# for no functional gain here. 0.8 is the last release that pairs with the
-# reqwest 0.12 / middleware 0.4 stack the rest of this crate is built on.
-reqwest-retry = "0.8"
-reqwest-tracing = "0.5"
+reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
+# `query` is a feature in 0.5 (it wasn't in 0.4) and enables reqwest's own --
+# pagination.rs builds each page request with `.query(&params)`.
+reqwest-middleware = { version = "0.5", features = ["query"] }
+reqwest-retry = "0.9"
+reqwest-tracing = "0.7"
 rpassword = "7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
