@@ -5760,6 +5760,44 @@ pub const CLI_SCHEMA_JSON: &str = r###"{
         "unset-project"
       ],
       "type": "meta"
+    },
+    {
+      "description": "Call an arbitrary Waldur API endpoint directly -- an escape hatch for endpoints not wired up as a typed command yet, or quick one-off debugging. No schema validation: a malformed --request fails server-side, same as curl",
+      "parameters": [
+        {
+          "description": "HTTP method (GET, POST, PUT, PATCH, DELETE; case-insensitive)",
+          "name": "method",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "API path, relative to --api-url (e.g. /api/customers/)",
+          "name": "path",
+          "positional": true,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Request body as inline JSON",
+          "name": "--request",
+          "type": "string"
+        },
+        {
+          "description": "Read the request body from a JSON or YAML file",
+          "name": "--request-file",
+          "type": "string"
+        },
+        {
+          "description": "Reshape the response with a JMESPath expression",
+          "name": "--jmespath",
+          "type": "string"
+        }
+      ],
+      "path": [
+        "api"
+      ],
+      "type": "meta"
     }
   ],
   "groups": [

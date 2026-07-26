@@ -16,7 +16,9 @@ It covers a curated slice of the API:
 
 Every command follows the same shape — `waldur-cli <group> <resource> <verb>` — and the same
 verbs (`list`, `get`, `create`, `update`, `delete`, plus `provision`/`terminate` for
-marketplace resources) behave consistently across every resource.
+marketplace resources) behave consistently across every resource. For anything outside that
+curated slice, `waldur-cli api <METHOD> <PATH>` calls any endpoint directly, using the same
+credentials and transport.
 
 ## Installation
 

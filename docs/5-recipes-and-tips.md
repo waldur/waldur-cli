@@ -179,6 +179,23 @@ waldur-cli openstack instance list \
   skeletons — that frameworks can directly ingest as a tool specification. Use `--compact` if
   you have a tight context budget and only need paths and descriptions.
 
+- **`api` is the escape hatch for anything not wired up as a typed command yet.**
+  `waldur-cli api <METHOD> <PATH>` calls any endpoint directly, using the same
+  `--api-url`/`--token`/`--profile` credentials as everything else — same transport (retries,
+  `--http-timeout`, `--debug` tracing), no schema validation:
+
+  ```bash
+  waldur-cli api GET /api/customers/ --jmespath '[].uuid'
+  waldur-cli api POST /api/some-endpoint/ --request '{"key": "value"}'
+  waldur-cli api DELETE /api/customers/<uuid>/ --dry-run
+  ```
+
+  Useful for a Waldur endpoint the CLI hasn't generated a command for yet, or quick
+  one-off debugging — a malformed `--request` only fails server-side, the same as `curl`
+  would. For anything the CLI *does* have a typed command for, prefer that instead: it
+  validates the request locally and gets `--fields`/`--filter`/`--order`/table output for
+  free.
+
 - **`whoami` before anything destructive.** One command confirms which instance and identity
   your credentials currently resolve to — cheap insurance before a `delete`/`terminate`.
 

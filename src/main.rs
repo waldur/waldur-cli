@@ -2,7 +2,7 @@ use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use waldur_cli::output::{self, OutputFormat};
-use waldur_cli::{cli, config, http, progress, schema, web};
+use waldur_cli::{api, cli, config, http, progress, schema, web};
 
 /// Scriptable CLI for Waldur MasterMind, covering OpenStack resource
 /// management and team/organization management. Generated command surface
@@ -117,6 +117,29 @@ enum Commands {
     },
     /// Update waldur-cli to the latest version published on GitHub
     Update,
+    /// Call an arbitrary Waldur API endpoint directly, using the current
+    /// --api-url/--token (or --profile's stored credentials) -- an escape
+    /// hatch for endpoints this CLI hasn't wired up as a typed command yet,
+    /// or for quick one-off debugging. There's no schema to validate a body
+    /// against here, so a malformed --request only fails server-side, same
+    /// as curl would
+    Api {
+        /// HTTP method (GET, POST, PUT, PATCH, DELETE; case-insensitive)
+        method: String,
+        /// API path, relative to --api-url (e.g. /api/customers/) -- a
+        /// leading slash is added if you omit it
+        path: String,
+        /// Request body as inline JSON
+        #[arg(long)]
+        request: Option<String>,
+        /// Read the request body from a JSON or YAML file
+        #[arg(long, value_name = "PATH")]
+        request_file: Option<std::path::PathBuf>,
+        /// Reshape the response with a JMESPath expression
+        /// (https://jmespath.org), e.g. '[].uuid'
+        #[arg(long)]
+        jmespath: Option<String>,
+    },
 }
 
 /// Same column set `team user get` uses -- whoami is conceptually that,
@@ -296,6 +319,21 @@ async fn run(cli: Cli) -> anyhow::Result<()> {
         }
         Commands::Update => {
             return tokio::task::spawn_blocking(run_update).await?;
+        }
+        Commands::Api { method, path, request, request_file, jmespath } => {
+            let config = config::Config::resolve(cli.api_url, cli.token, cli.project, &profile)?;
+            return api::run(
+                &config.api_url,
+                config.token.as_deref(),
+                &method,
+                &path,
+                request.as_deref(),
+                request_file.as_deref(),
+                jmespath.as_deref(),
+                cli.dry_run,
+                cli.format,
+            )
+            .await;
         }
         Commands::Group(cmd) => *cmd,
     };
