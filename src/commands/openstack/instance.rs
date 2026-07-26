@@ -277,27 +277,51 @@ pub struct InstanceWaitArgs {
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceRestartArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceSetOkArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceStartArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceStopArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceUnlinkArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceUnrescueArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 pub async fn run(
     base_url: &str,
@@ -476,106 +500,202 @@ pub async fn run(
                 .await?;
         }
         InstanceCommand::Restart(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-instances/", args.uuid, "/restart/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-instances/", uuid, "/restart/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         InstanceCommand::SetOk(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-instances/", args.uuid, "/set_ok/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-instances/", uuid, "/set_ok/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         InstanceCommand::Start(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-instances/", args.uuid, "/start/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-instances/", uuid, "/start/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         InstanceCommand::Stop(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-instances/", args.uuid, "/stop/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-instances/", uuid, "/stop/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         InstanceCommand::Unlink(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-instances/", args.uuid, "/unlink/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-instances/", uuid, "/unlink/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         InstanceCommand::Unrescue(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-instances/", args.uuid, "/unrescue/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-instances/", uuid, "/unrescue/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
     }
     Ok(())

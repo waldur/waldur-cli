@@ -81,11 +81,19 @@ pub struct PersonalAccessTokenCreateArgs {
 }
 #[derive(clap::Args, Debug)]
 pub struct PersonalAccessTokenDeleteArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct PersonalAccessTokenRotateArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 pub async fn run(
     base_url: &str,
@@ -185,55 +193,89 @@ pub async fn run(
             crate::output::print_result(&result, COLUMNS, format)?;
         }
         PersonalAccessTokenCommand::Delete(args) => {
-            let path = format!("{}{}{}", "/api/personal-access-tokens/", args.uuid, "/");
-            if dry_run {
-                return crate::output::print_dry_run("DELETE", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!("{}{}{}", "/api/personal-access-tokens/", uuid, "/");
+                if dry_run {
+                    crate::output::print_dry_run("DELETE", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::DELETE,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(_) => {
+                        match format {
+                            crate::output::OutputFormat::Json
+                            | crate::output::OutputFormat::Ndjson => {
+                                println!(
+                                    "{}", serde_json::json!({ "deleted" : true, "uuid" : uuid })
+                                );
+                            }
+                            crate::output::OutputFormat::Table => {
+                                println!("Deleted {}", uuid);
+                            }
+                            crate::output::OutputFormat::Tsv => {
+                                println!("true\t{}", uuid);
+                            }
+                            crate::output::OutputFormat::Toon => {
+                                println!(
+                                    "{}", serde_toon::to_string(& serde_json::json!({ "deleted"
+                                    : true, "uuid" : uuid }),) ?
+                                );
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let _ = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::DELETE,
-                    &path,
-                    None,
-                )
-                .await?;
-            match format {
-                crate::output::OutputFormat::Json
-                | crate::output::OutputFormat::Ndjson => {
-                    println!(
-                        "{}", serde_json::json!({ "deleted" : true, "uuid" : args.uuid })
-                    );
-                }
-                crate::output::OutputFormat::Table => {
-                    println!("Deleted {}", args.uuid);
-                }
-                crate::output::OutputFormat::Tsv => {
-                    println!("true\t{}", args.uuid);
-                }
-                crate::output::OutputFormat::Toon => {
-                    println!(
-                        "{}", serde_toon::to_string(& serde_json::json!({ "deleted" :
-                        true, "uuid" : args.uuid }),) ?
-                    );
-                }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
             }
         }
         PersonalAccessTokenCommand::Rotate(args) => {
-            let path = format!(
-                "{}{}{}", "/api/personal-access-tokens/", args.uuid, "/rotate/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/personal-access-tokens/", uuid, "/rotate/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
     }
     Ok(())

@@ -1,16 +1,16 @@
 # `waldur-cli openstack volume unlink`
 
-Unlink openstack volumes.
+Unlink openstack volumes. Batch-capable: pass several UUIDs, or omit them and pipe UUIDs in on stdin (one per line -- a bare UUID or a JSON object with a `uuid` field, so `list --format ndjson` composes directly). One failure doesn't stop the rest; the command exits non-zero afterward if any item failed.
 
 ## Usage
 
 ```bash
-waldur-cli openstack volume unlink <UUID>
+waldur-cli openstack volume unlink [UUID]...
 ```
 
 | Flag | Type | Description |
 | --- | --- | --- |
-| `<UUID>` | positional, required | uuid of the resource. |
+| `[UUID]...` | positional, 0 or more | uuid(s) of the resource. Reads from stdin if omitted. |
 
 ## Examples
 
@@ -18,7 +18,13 @@ waldur-cli openstack volume unlink <UUID>
 waldur-cli openstack volume unlink <uuid>
 ```
 
-(sends a bodyless POST to `/api/openstack-volumes/{uuid}/unlink/`)
+Several at once:
+
+```bash
+waldur-cli openstack volume unlink <uuid-1> <uuid-2>
+```
+
+(sends a bodyless POST to `/api/openstack-volumes/{uuid}/unlink/` for each)
 
 ## Global options
 

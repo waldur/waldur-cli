@@ -51,31 +51,59 @@ pub struct OrderWaitArgs {
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderApproveByConsumerArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderCancelArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderDeleteAttachmentArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderRetryArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderSetStateDoneArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderSetStateExecutingArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct OrderUnlinkArgs {
-    pub uuid: String,
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 pub async fn run(
     base_url: &str,
@@ -120,123 +148,235 @@ pub async fn run(
                 .await?;
         }
         OrderCommand::ApproveByConsumer(args) => {
-            let path = format!(
-                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/approve_by_consumer/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-orders/", uuid, "/approve_by_consumer/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         OrderCommand::Cancel(args) => {
-            let path = format!(
-                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/cancel/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-orders/", uuid, "/cancel/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         OrderCommand::DeleteAttachment(args) => {
-            let path = format!(
-                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/delete_attachment/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-orders/", uuid, "/delete_attachment/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         OrderCommand::Retry(args) => {
-            let path = format!(
-                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/retry/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-orders/", uuid, "/retry/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         OrderCommand::SetStateDone(args) => {
-            let path = format!(
-                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/set_state_done/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-orders/", uuid, "/set_state_done/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         OrderCommand::SetStateExecuting(args) => {
-            let path = format!(
-                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/set_state_executing/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-orders/", uuid, "/set_state_executing/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         OrderCommand::Unlink(args) => {
-            let path = format!(
-                "{}{}{}", "/api/marketplace-orders/", args.uuid, "/unlink/"
-            );
-            if dry_run {
-                return crate::output::print_dry_run("POST", &path, None, format);
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-orders/", uuid, "/unlink/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
             }
-            let result = crate::http::call_one(
-                    base_url,
-                    token,
-                    reqwest::Method::POST,
-                    &path,
-                    None,
-                )
-                .await?;
-            crate::output::print_result(&result, COLUMNS, format)?;
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
     }
     Ok(())

@@ -1,21 +1,33 @@
 # `waldur-cli team project delete`
 
-Delete projects.
+Delete projects. Batch-capable: pass several UUIDs, or omit them and pipe UUIDs in on stdin (one per line -- a bare UUID or a JSON object with a `uuid` field, so `list --format ndjson` composes directly). One failure doesn't stop the rest; the command exits non-zero afterward if any item failed.
 
 ## Usage
 
 ```bash
-waldur-cli team project delete <UUID>
+waldur-cli team project delete [UUID]...
 ```
 
 | Flag | Type | Description |
 | --- | --- | --- |
-| `<UUID>` | positional, required | uuid of the resource. |
+| `[UUID]...` | positional, 0 or more | uuid(s) of the resource. Reads from stdin if omitted. |
 
 ## Examples
 
 ```bash
 waldur-cli team project delete <uuid>
+```
+
+Several at once:
+
+```bash
+waldur-cli team project delete <uuid-1> <uuid-2>
+```
+
+From a filtered list, without an intermediate `jq`:
+
+```bash
+waldur-cli team project list --format ndjson --filter name_exact=example | waldur-cli team project delete
 ```
 
 Preview without deleting:

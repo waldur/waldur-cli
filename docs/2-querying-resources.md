@@ -51,8 +51,11 @@ just isn't streamed in that combination.
 Piping into something that stops reading early (`| head`) is safe -- the command notices and
 stops fetching further pages, rather than continuing to pull data nobody will read.
 
-`get`/`create`/`update`/`delete` under `--format ndjson` print their single result object as
-one compact line, same shape as `json` without the pretty-printing.
+`get`/`create`/`update` under `--format ndjson` print their single result object as one
+compact line, same shape as `json` without the pretty-printing. `delete` and bodyless
+action verbs print one such line per UUID -- see
+[batch operations](3-managing-resources.md#batch-operations) for running them over several
+UUIDs (or a piped-in `list --format ndjson`) at once.
 
 ## `--filter KEY=VALUE` — narrow server-side
 

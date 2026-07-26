@@ -5,6 +5,7 @@
 //! `filter`, `query`) instead of only being able to exercise it indirectly
 //! by shelling out to the compiled binary.
 
+pub mod batch;
 pub mod cli;
 pub mod commands;
 pub mod config;

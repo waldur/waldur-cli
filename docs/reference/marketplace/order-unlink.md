@@ -1,16 +1,16 @@
 # `waldur-cli marketplace order unlink`
 
-Unlink marketplace orders (check status of a submitted provision/terminate).
+Unlink marketplace orders (check status of a submitted provision/terminate). Batch-capable: pass several UUIDs, or omit them and pipe UUIDs in on stdin (one per line -- a bare UUID or a JSON object with a `uuid` field, so `list --format ndjson` composes directly). One failure doesn't stop the rest; the command exits non-zero afterward if any item failed.
 
 ## Usage
 
 ```bash
-waldur-cli marketplace order unlink <UUID>
+waldur-cli marketplace order unlink [UUID]...
 ```
 
 | Flag | Type | Description |
 | --- | --- | --- |
-| `<UUID>` | positional, required | uuid of the resource. |
+| `[UUID]...` | positional, 0 or more | uuid(s) of the resource. Reads from stdin if omitted. |
 
 ## Examples
 
@@ -18,7 +18,13 @@ waldur-cli marketplace order unlink <UUID>
 waldur-cli marketplace order unlink <uuid>
 ```
 
-(sends a bodyless POST to `/api/marketplace-orders/{uuid}/unlink/`)
+Several at once:
+
+```bash
+waldur-cli marketplace order unlink <uuid-1> <uuid-2>
+```
+
+(sends a bodyless POST to `/api/marketplace-orders/{uuid}/unlink/` for each)
 
 ## Global options
 

@@ -1,16 +1,16 @@
 # `waldur-cli openstack floating-ip set-ok`
 
-Set ok openstack floating ips.
+Set ok openstack floating ips. Batch-capable: pass several UUIDs, or omit them and pipe UUIDs in on stdin (one per line -- a bare UUID or a JSON object with a `uuid` field, so `list --format ndjson` composes directly). One failure doesn't stop the rest; the command exits non-zero afterward if any item failed.
 
 ## Usage
 
 ```bash
-waldur-cli openstack floating-ip set-ok <UUID>
+waldur-cli openstack floating-ip set-ok [UUID]...
 ```
 
 | Flag | Type | Description |
 | --- | --- | --- |
-| `<UUID>` | positional, required | uuid of the resource. |
+| `[UUID]...` | positional, 0 or more | uuid(s) of the resource. Reads from stdin if omitted. |
 
 ## Examples
 
@@ -18,7 +18,13 @@ waldur-cli openstack floating-ip set-ok <UUID>
 waldur-cli openstack floating-ip set-ok <uuid>
 ```
 
-(sends a bodyless POST to `/api/openstack-floating-ips/{uuid}/set_ok/`)
+Several at once:
+
+```bash
+waldur-cli openstack floating-ip set-ok <uuid-1> <uuid-2>
+```
+
+(sends a bodyless POST to `/api/openstack-floating-ips/{uuid}/set_ok/` for each)
 
 ## Global options
 

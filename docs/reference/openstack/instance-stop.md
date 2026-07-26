@@ -1,16 +1,16 @@
 # `waldur-cli openstack instance stop`
 
-Stop openstack instances (vms).
+Stop openstack instances (vms). Batch-capable: pass several UUIDs, or omit them and pipe UUIDs in on stdin (one per line -- a bare UUID or a JSON object with a `uuid` field, so `list --format ndjson` composes directly). One failure doesn't stop the rest; the command exits non-zero afterward if any item failed.
 
 ## Usage
 
 ```bash
-waldur-cli openstack instance stop <UUID>
+waldur-cli openstack instance stop [UUID]...
 ```
 
 | Flag | Type | Description |
 | --- | --- | --- |
-| `<UUID>` | positional, required | uuid of the resource. |
+| `[UUID]...` | positional, 0 or more | uuid(s) of the resource. Reads from stdin if omitted. |
 
 ## Examples
 
@@ -18,7 +18,13 @@ waldur-cli openstack instance stop <UUID>
 waldur-cli openstack instance stop <uuid>
 ```
 
-(sends a bodyless POST to `/api/openstack-instances/{uuid}/stop/`)
+Several at once:
+
+```bash
+waldur-cli openstack instance stop <uuid-1> <uuid-2>
+```
+
+(sends a bodyless POST to `/api/openstack-instances/{uuid}/stop/` for each)
 
 ## Global options
 

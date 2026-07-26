@@ -1,21 +1,33 @@
 # `waldur-cli team role delete`
 
-Delete roles.
+Delete roles. Batch-capable: pass several UUIDs, or omit them and pipe UUIDs in on stdin (one per line -- a bare UUID or a JSON object with a `uuid` field, so `list --format ndjson` composes directly). One failure doesn't stop the rest; the command exits non-zero afterward if any item failed.
 
 ## Usage
 
 ```bash
-waldur-cli team role delete <UUID>
+waldur-cli team role delete [UUID]...
 ```
 
 | Flag | Type | Description |
 | --- | --- | --- |
-| `<UUID>` | positional, required | uuid of the resource. |
+| `[UUID]...` | positional, 0 or more | uuid(s) of the resource. Reads from stdin if omitted. |
 
 ## Examples
 
 ```bash
 waldur-cli team role delete <uuid>
+```
+
+Several at once:
+
+```bash
+waldur-cli team role delete <uuid-1> <uuid-2>
+```
+
+From a filtered list, without an intermediate `jq`:
+
+```bash
+waldur-cli team role list --format ndjson --filter is_active=true | waldur-cli team role delete
 ```
 
 Preview without deleting:

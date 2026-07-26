@@ -120,6 +120,27 @@ address, or you're not on the same network as its `internal_ips`), there's no wa
 SSH at all; `waldur-cli openstack instance get <uuid> --web` opens its HomePort page, which
 may offer a browser-based console instead.
 
+### Clean up in bulk from a filtered list
+
+`delete` and every bodyless action verb read UUIDs from stdin when none are given as
+arguments, and `list --format ndjson` emits one JSON object per line -- so filtering and
+acting compose directly, no `jq -r .uuid` in between:
+
+```bash
+# Delete every errored volume
+waldur-cli openstack volume list --format ndjson --filter state=ERRED \
+  | waldur-cli openstack volume delete
+
+# Stop every running instance in a project
+waldur-cli openstack instance list --format ndjson --filter state=OK --project <uuid> \
+  | waldur-cli openstack instance stop
+```
+
+Each UUID is attempted independently -- one failure is reported to stderr and the rest of
+the batch still runs, with the command only exiting non-zero afterward if something failed.
+Sanity-check first with `--dry-run` (add it to the second command in the pipeline) or by
+piping through `--jmespath` for a quick count before committing to the real thing.
+
 ### Feed live inventory to an LLM
 
 Minimise tokens: fetch only the fields that matter, and render as TOON.

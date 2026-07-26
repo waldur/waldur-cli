@@ -15,6 +15,11 @@ waldur-cli team customer list --format json 2>err.json   # stdout is the result,
 Because structured formats emit structured errors, an agent consuming `--format json` can
 handle success and failure through one JSON parser without a separate error path.
 
+A batch (`delete`, or a bodyless action, over several UUIDs) is the one place per-item errors
+go to stderr as they happen rather than at the end: `error: <uuid>: <message>`, one line per
+failed item, interleaved with the successful items' normal stdout output. The command still
+exits non-zero if anything failed, with a final `<N> of the batch failed: <uuids>` summary.
+
 ## Exit codes
 
 - `0` — success

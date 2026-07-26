@@ -80,7 +80,8 @@ The full guide lives in [`docs/`](docs/):
    selection, server-side ordering, JMESPath, streaming large lists with `--format ndjson`,
    and opening a resource in the browser with `get --web`
 3. [Managing resources](docs/3-managing-resources.md) — `create`/`update`/`delete`,
-   request-body skeletons, and per-resource action verbs (start/stop/detach/approve/...)
+   request-body skeletons, per-resource action verbs (start/stop/detach/approve/...), and
+   batching `delete`/action verbs over several UUIDs or a piped-in `list --format ndjson`
 4. [Provisioning](docs/4-provisioning-openstack.md) — the marketplace order flow
    (`provision`/`terminate`), for OpenStack and any other offering type, plus `wait`, for
    polling resources with real async server-side state to completion

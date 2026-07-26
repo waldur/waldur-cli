@@ -149,3 +149,28 @@ Run `waldur-cli <group> <resource> --help` to see which action verbs a given res
 the set varies by resource and isn't exhaustive: only bodyless POST actions are currently
 exposed (no read-only/GET actions, and none that take a request body). If an action you need
 is missing, it may still exist in Waldur's API but just isn't wired up yet.
+
+## Batch operations
+
+`delete` and every bodyless action verb (`start`/`stop`/`restart`/`detach`/`cancel`/...,
+anything above with no `--request` flag) accept more than one UUID, or none at all —
+omitting them reads UUIDs from stdin instead, one per line. Each line can be a bare UUID or
+a JSON object with a `uuid` field, so `list --format ndjson`'s own output pipes straight in
+without an intermediate `jq -r .uuid`:
+
+```bash
+waldur-cli openstack instance stop <uuid-1> <uuid-2> <uuid-3>
+
+waldur-cli team project list --format ndjson --filter is_active=false \
+  | waldur-cli team project delete
+```
+
+One bad UUID doesn't abort the rest of the batch: each item is attempted independently, a
+failure is printed to stderr as `error: <uuid>: <message>` without stopping the loop, and the
+command exits non-zero afterward only if at least one item failed — so you always find out
+which one, and everything else still went through. `--dry-run` previews every item in the
+batch, not just the first.
+
+Body-having actions (a `--request`/`--request-file`/`--generate-skeleton` flag present) are
+not batchable — one request body can't sensibly apply to several different resources — so
+those still take exactly one `<uuid>`.

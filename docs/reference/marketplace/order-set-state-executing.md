@@ -1,16 +1,16 @@
 # `waldur-cli marketplace order set-state-executing`
 
-Set state executing marketplace orders (check status of a submitted provision/terminate).
+Set state executing marketplace orders (check status of a submitted provision/terminate). Batch-capable: pass several UUIDs, or omit them and pipe UUIDs in on stdin (one per line -- a bare UUID or a JSON object with a `uuid` field, so `list --format ndjson` composes directly). One failure doesn't stop the rest; the command exits non-zero afterward if any item failed.
 
 ## Usage
 
 ```bash
-waldur-cli marketplace order set-state-executing <UUID>
+waldur-cli marketplace order set-state-executing [UUID]...
 ```
 
 | Flag | Type | Description |
 | --- | --- | --- |
-| `<UUID>` | positional, required | uuid of the resource. |
+| `[UUID]...` | positional, 0 or more | uuid(s) of the resource. Reads from stdin if omitted. |
 
 ## Examples
 
@@ -18,7 +18,13 @@ waldur-cli marketplace order set-state-executing <UUID>
 waldur-cli marketplace order set-state-executing <uuid>
 ```
 
-(sends a bodyless POST to `/api/marketplace-orders/{uuid}/set_state_executing/`)
+Several at once:
+
+```bash
+waldur-cli marketplace order set-state-executing <uuid-1> <uuid-2>
+```
+
+(sends a bodyless POST to `/api/marketplace-orders/{uuid}/set_state_executing/` for each)
 
 ## Global options
 
