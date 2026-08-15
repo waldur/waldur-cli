@@ -3,6 +3,7 @@
 #![allow(clippy::too_many_arguments)]
 const COLUMNS: &[&str; 4usize] = &["uuid", "name", "type", "state"];
 const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("accessible", crate::filter::FilterKind::Bool),
     ("accessible_via_calls", crate::filter::FilterKind::Bool),
     ("allowed_customer_uuid", crate::filter::FilterKind::Str),
     ("attributes", crate::filter::FilterKind::Str),
@@ -10,6 +11,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("can_create_offering_user", crate::filter::FilterKind::Bool),
     ("category_group_uuid", crate::filter::FilterKind::Str),
     ("category_uuid", crate::filter::FilterKind::Str),
+    ("consumer_customer_uuid", crate::filter::FilterKind::Str),
     ("created", crate::filter::FilterKind::Str),
     ("created_before", crate::filter::FilterKind::Str),
     ("customer", crate::filter::FilterKind::Str),
@@ -23,6 +25,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("name", crate::filter::FilterKind::Str),
     ("name_exact", crate::filter::FilterKind::Str),
     ("offering_group_uuid", crate::filter::FilterKind::Str),
+    ("open_for_proposals", crate::filter::FilterKind::Bool),
     ("organization_group_uuid", crate::filter::FilterKind::Str),
     ("parent_uuid", crate::filter::FilterKind::Str),
     ("project_uuid", crate::filter::FilterKind::Str),
@@ -93,6 +96,7 @@ pub struct OfferingListArgs {
             "customer_name",
             "customer_uuid",
             "datacite_doi",
+            "default_access_subnets",
             "description",
             "documentation_url",
             "effective_available_limits",
@@ -113,6 +117,7 @@ pub struct OfferingListArgs {
             "offering_group",
             "offering_group_title",
             "offering_group_uuid",
+            "open_for_proposals",
             "options",
             "order_count",
             "organization_groups",
@@ -130,6 +135,7 @@ pub struct OfferingListArgs {
             "project_name",
             "project_uuid",
             "promotion_campaigns",
+            "qos_profiles",
             "quotas",
             "resource_options",
             "scope",

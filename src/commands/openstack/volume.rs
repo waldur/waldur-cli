@@ -34,7 +34,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
 const VOLUME_WEB_PATH: &str = "/resource-details/{uuid}";
 const UPDATE_SKELETON: &str = "{\n  \"bootable\": null,\n  \"description\": null,\n  \"name\": \"\"\n}";
 const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"bootable\":{\"type\":\"boolean\"},\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
-const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"image\": null,\n    \"name\": \"\",\n    \"size\": null,\n    \"type\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
+const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"image\": null,\n    \"name\": \"\",\n    \"size\": null,\n    \"type\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null\n}";
 ///OpenStack volumes
 #[derive(clap::Subcommand, Debug)]
 pub enum VolumeCommand {

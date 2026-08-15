@@ -9,8 +9,10 @@ const COLUMNS: &[&str; 5usize] = &[
     "is_active",
 ];
 const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[];
-const CREATE_SKELETON: &str = "{\n  \"allowed_scopes\": null,\n  \"expires_at\": \"\",\n  \"name\": \"\",\n  \"scopes\": [\n    \"\"\n  ]\n}";
-const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"allowed_scopes\":{\"items\":{\"properties\":{\"type\":{\"type\":\"string\"},\"uuid\":{\"format\":\"uuid\",\"type\":\"string\"}},\"required\":[\"type\",\"uuid\"],\"type\":\"object\"},\"type\":\"array\"},\"expires_at\":{\"format\":\"date-time\",\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"scopes\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"expires_at\",\"name\",\"scopes\"],\"type\":\"object\"}";
+const CREATE_SKELETON: &str = "{\n  \"allowed_networks\": null,\n  \"allowed_scopes\": null,\n  \"expires_at\": \"\",\n  \"name\": \"\",\n  \"scopes\": [\n    \"\"\n  ]\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"allowed_networks\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"allowed_scopes\":{\"items\":{\"properties\":{\"type\":{\"type\":\"string\"},\"uuid\":{\"format\":\"uuid\",\"type\":\"string\"}},\"required\":[\"type\",\"uuid\"],\"type\":\"object\"},\"type\":\"array\"},\"expires_at\":{\"format\":\"date-time\",\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"scopes\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"expires_at\",\"name\",\"scopes\"],\"type\":\"object\"}";
+const SET_NETWORK_ACL_SKELETON: &str = "{\n  \"allowed_networks\": [\n    \"\"\n  ]\n}";
+const SET_NETWORK_ACL_REQUEST_SCHEMA: &str = "{\"properties\":{\"allowed_networks\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"allowed_networks\"],\"type\":\"object\"}";
 ///Personal access tokens (named, scoped, time-limited API credentials)
 #[derive(clap::Subcommand, Debug)]
 pub enum PersonalAccessTokenCommand {
@@ -24,6 +26,8 @@ pub enum PersonalAccessTokenCommand {
     Delete(PersonalAccessTokenDeleteArgs),
     ///Rotate personal access tokens (named, scoped, time-limited api credentials)
     Rotate(PersonalAccessTokenRotateArgs),
+    ///Set network acl personal access tokens (named, scoped, time-limited api credentials)
+    SetNetworkAcl(PersonalAccessTokenSetNetworkAclArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct PersonalAccessTokenListArgs {
@@ -94,6 +98,35 @@ pub struct PersonalAccessTokenRotateArgs {
     /// `uuid` field, so piping `list --format ndjson` straight in
     /// works without an intermediate `jq -r .uuid`.
     pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "personal_access_token_set_network_acl_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct PersonalAccessTokenSetNetworkAclArgs {
+    pub uuid: String,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 pub async fn run(
     base_url: &str,
@@ -276,6 +309,35 @@ pub async fn run(
                     "{} of the batch failed: {}", failed.len(), failed.join(", ")
                 );
             }
+        }
+        PersonalAccessTokenCommand::SetNetworkAcl(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(SET_NETWORK_ACL_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                SET_NETWORK_ACL_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let path = format!(
+                "{}{}{}", "/api/personal-access-tokens/", args.uuid, "/set_network_acl/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
     }
     Ok(())

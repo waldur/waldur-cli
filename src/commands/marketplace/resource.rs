@@ -48,7 +48,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("visible_to_username", crate::filter::FilterKind::Str),
 ];
 const RESOURCE_WEB_PATH: &str = "/resource-details/{uuid}";
-const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"description\": null,\n    \"name\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null,\n  \"type\": null\n}";
+const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"description\": null,\n    \"name\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null\n}";
 ///Marketplace resources (provision/terminate any offering)
 #[derive(clap::Subcommand, Debug)]
 pub enum ResourceCommand {
@@ -111,6 +111,7 @@ pub struct ResourceListArgs {
             "endpoints",
             "error_message",
             "error_traceback",
+            "has_api_keys",
             "is_limit_based",
             "is_usage_based",
             "last_sync",
@@ -160,6 +161,7 @@ pub struct ResourceListArgs {
             "provider_uuid",
             "renewal_date",
             "report",
+            "resource_effective_end_date",
             "resource_type",
             "resource_uuid",
             "restrict_member_access",
@@ -168,6 +170,7 @@ pub struct ResourceListArgs {
             "slug",
             "state",
             "url",
+            "usage_limit_restriction",
             "user_requires_reconsent",
             "username",
             "uuid"]
@@ -180,14 +183,22 @@ pub struct ResourceListArgs {
         value_delimiter = ',',
         allow_hyphen_values = true,
         value_parser = clap::builder::PossibleValuesParser::new(
-            ["-created",
+            ["-backend_id",
+            "-created",
+            "-customer_name",
             "-end_date",
             "-name",
+            "-offering_name",
+            "-plan_name",
             "-project_name",
             "-state",
+            "backend_id",
             "created",
+            "customer_name",
             "end_date",
             "name",
+            "offering_name",
+            "plan_name",
             "project_name",
             "state"]
         ),

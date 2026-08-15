@@ -4,14 +4,19 @@
 use anyhow::Context;
 const COLUMNS: &[&str; 3usize] = &["uuid", "name", "description"];
 const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
+    ("available_for_customer", crate::filter::FilterKind::Str),
+    ("content_type", crate::filter::FilterKind::Str),
     ("description", crate::filter::FilterKind::Str),
+    ("include_concealed", crate::filter::FilterKind::Bool),
     ("is_active", crate::filter::FilterKind::Bool),
+    ("is_system_role", crate::filter::FilterKind::Bool),
     ("name", crate::filter::FilterKind::Str),
+    ("query", crate::filter::FilterKind::Str),
 ];
-const CREATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
-const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"content_type\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"description_ar\":{\"type\":\"string\"},\"description_cs\":{\"type\":\"string\"},\"description_da\":{\"type\":\"string\"},\"description_de\":{\"type\":\"string\"},\"description_en\":{\"type\":\"string\"},\"description_es\":{\"type\":\"string\"},\"description_et\":{\"type\":\"string\"},\"description_fr\":{\"type\":\"string\"},\"description_it\":{\"type\":\"string\"},\"description_lt\":{\"type\":\"string\"},\"description_lv\":{\"type\":\"string\"},\"description_nb\":{\"type\":\"string\"},\"description_ru\":{\"type\":\"string\"},\"description_sv\":{\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"name\":{\"type\":\"string\"},\"permissions\":{\"type\":\"object\"}},\"required\":[\"content_type\",\"name\",\"permissions\"],\"type\":\"object\"}";
-const UPDATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
-const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"content_type\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"description_ar\":{\"type\":\"string\"},\"description_cs\":{\"type\":\"string\"},\"description_da\":{\"type\":\"string\"},\"description_de\":{\"type\":\"string\"},\"description_en\":{\"type\":\"string\"},\"description_es\":{\"type\":\"string\"},\"description_et\":{\"type\":\"string\"},\"description_fr\":{\"type\":\"string\"},\"description_it\":{\"type\":\"string\"},\"description_lt\":{\"type\":\"string\"},\"description_lv\":{\"type\":\"string\"},\"description_nb\":{\"type\":\"string\"},\"description_ru\":{\"type\":\"string\"},\"description_sv\":{\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"name\":{\"type\":\"string\"},\"permissions\":{\"type\":\"object\"}},\"required\":[\"content_type\",\"name\",\"permissions\"],\"type\":\"object\"}";
+const CREATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_km\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"content_type\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"description_ar\":{\"type\":\"string\"},\"description_cs\":{\"type\":\"string\"},\"description_da\":{\"type\":\"string\"},\"description_de\":{\"type\":\"string\"},\"description_en\":{\"type\":\"string\"},\"description_es\":{\"type\":\"string\"},\"description_et\":{\"type\":\"string\"},\"description_fr\":{\"type\":\"string\"},\"description_it\":{\"type\":\"string\"},\"description_km\":{\"type\":\"string\"},\"description_lt\":{\"type\":\"string\"},\"description_lv\":{\"type\":\"string\"},\"description_nb\":{\"type\":\"string\"},\"description_ru\":{\"type\":\"string\"},\"description_sv\":{\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"name\":{\"type\":\"string\"},\"permissions\":{\"type\":\"object\"}},\"required\":[\"content_type\",\"name\",\"permissions\"],\"type\":\"object\"}";
+const UPDATE_SKELETON: &str = "{\n  \"content_type\": \"\",\n  \"description\": null,\n  \"description_ar\": null,\n  \"description_cs\": null,\n  \"description_da\": null,\n  \"description_de\": null,\n  \"description_en\": null,\n  \"description_es\": null,\n  \"description_et\": null,\n  \"description_fr\": null,\n  \"description_it\": null,\n  \"description_km\": null,\n  \"description_lt\": null,\n  \"description_lv\": null,\n  \"description_nb\": null,\n  \"description_ru\": null,\n  \"description_sv\": null,\n  \"is_active\": null,\n  \"name\": \"\",\n  \"permissions\": {}\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"content_type\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"description_ar\":{\"type\":\"string\"},\"description_cs\":{\"type\":\"string\"},\"description_da\":{\"type\":\"string\"},\"description_de\":{\"type\":\"string\"},\"description_en\":{\"type\":\"string\"},\"description_es\":{\"type\":\"string\"},\"description_et\":{\"type\":\"string\"},\"description_fr\":{\"type\":\"string\"},\"description_it\":{\"type\":\"string\"},\"description_km\":{\"type\":\"string\"},\"description_lt\":{\"type\":\"string\"},\"description_lv\":{\"type\":\"string\"},\"description_nb\":{\"type\":\"string\"},\"description_ru\":{\"type\":\"string\"},\"description_sv\":{\"type\":\"string\"},\"is_active\":{\"type\":\"boolean\"},\"name\":{\"type\":\"string\"},\"permissions\":{\"type\":\"object\"}},\"required\":[\"content_type\",\"name\",\"permissions\"],\"type\":\"object\"}";
 ///Roles
 #[derive(clap::Subcommand, Debug)]
 pub enum RoleCommand {
@@ -50,6 +55,8 @@ pub struct RoleListArgs {
         value_delimiter = ',',
         value_parser = clap::builder::PossibleValuesParser::new(
             ["content_type",
+            "customer_name",
+            "customer_uuid",
             "description",
             "description_ar",
             "description_cs",
@@ -60,6 +67,7 @@ pub struct RoleListArgs {
             "description_et",
             "description_fr",
             "description_it",
+            "description_km",
             "description_lt",
             "description_lv",
             "description_nb",
@@ -69,11 +77,32 @@ pub struct RoleListArgs {
             "is_system_role",
             "name",
             "permissions",
+            "template_name",
+            "template_uuid",
             "users_count",
             "uuid"]
         ),
     )]
     pub fields: Option<Vec<String>>,
+    ///Sort results server-side by these fields (comma-separated); prefix a field with - for descending, e.g. -created.
+    #[arg(
+        long = "order",
+        value_delimiter = ',',
+        allow_hyphen_values = true,
+        value_parser = clap::builder::PossibleValuesParser::new(
+            ["-is_active",
+            "-name",
+            "-origin",
+            "-scope",
+            "-users_count",
+            "is_active",
+            "name",
+            "origin",
+            "scope",
+            "users_count"]
+        ),
+    )]
+    pub order: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
 pub struct RoleGetArgs {
@@ -158,6 +187,9 @@ pub async fn run(
                 &args.filter,
                 FILTER_SPEC,
             )?;
+            if let Some(order) = &args.order {
+                query_params.push(("o".to_string(), order.join(",")));
+            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
