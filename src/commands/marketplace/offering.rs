@@ -141,6 +141,9 @@ pub struct OfferingListArgs {
             "scope",
             "scope_error_message",
             "scope_name",
+            "scope_resource",
+            "scope_resource_name",
+            "scope_resource_uuid",
             "scope_state",
             "scope_uuid",
             "screenshots",
@@ -158,6 +161,7 @@ pub struct OfferingListArgs {
             "type",
             "url",
             "user_has_consent",
+            "user_has_offering_user",
             "uuid",
             "vendor_details"]
         ),
