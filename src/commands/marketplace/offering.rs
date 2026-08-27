@@ -83,6 +83,8 @@ pub struct OfferingListArgs {
             "backend_metadata",
             "billable",
             "billing_type_classification",
+            "can_update_integration",
+            "can_update_options",
             "category",
             "category_title",
             "category_uuid",
