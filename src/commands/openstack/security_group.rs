@@ -73,6 +73,7 @@ pub struct SecurityGroupListArgs {
             "description",
             "error_message",
             "error_traceback",
+            "instance_count",
             "is_limit_based",
             "is_usage_based",
             "marketplace_category_name",
