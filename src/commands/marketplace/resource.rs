@@ -154,6 +154,7 @@ pub struct ResourceListArgs {
             "project_is_in_grace_period",
             "project_name",
             "project_slug",
+            "project_start_date",
             "project_uuid",
             "provider_description",
             "provider_name",
