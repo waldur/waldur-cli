@@ -33,7 +33,9 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
 const INSTANCE_WEB_PATH: &str = "/resource-details/{uuid}";
 const UPDATE_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\"\n}";
 const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
-const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"config_drive\": null,\n    \"connect_directly_to_external_network\": null,\n    \"data_volume_size\": null,\n    \"data_volume_type\": null,\n    \"data_volumes\": null,\n    \"description\": null,\n    \"flavor\": \"\",\n    \"floating_ips\": null,\n    \"image\": \"\",\n    \"name\": \"\",\n    \"ports\": [\n      {\n        \"fixed_ips\": null,\n        \"port\": null,\n        \"port_security_enabled\": null,\n        \"subnet\": null\n      }\n    ],\n    \"security_groups\": null,\n    \"server_group\": null,\n    \"ssh_public_key\": null,\n    \"system_volume_size\": 0,\n    \"system_volume_type\": null,\n    \"user_data\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null\n}";
+const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"config_drive\": null,\n    \"connect_directly_to_external_network\": null,\n    \"data_volume_size\": null,\n    \"data_volume_type\": null,\n    \"data_volumes\": null,\n    \"description\": null,\n    \"flavor\": \"\",\n    \"floating_ips\": null,\n    \"image\": \"\",\n    \"metadata\": null,\n    \"name\": \"\",\n    \"ports\": [\n      {\n        \"fixed_ips\": null,\n        \"port\": null,\n        \"port_security_enabled\": null,\n        \"subnet\": null\n      }\n    ],\n    \"security_groups\": null,\n    \"server_group\": null,\n    \"ssh_public_key\": null,\n    \"system_volume_size\": 0,\n    \"system_volume_type\": null,\n    \"user_data\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null\n}";
+const SET_METADATA_SKELETON: &str = "{\n  \"metadata\": {}\n}";
+const SET_METADATA_REQUEST_SCHEMA: &str = "{\"properties\":{\"metadata\":{\"type\":\"object\"}},\"required\":[\"metadata\"],\"type\":\"object\"}";
 ///OpenStack instances (VMs)
 #[derive(clap::Subcommand, Debug)]
 pub enum InstanceCommand {
@@ -51,6 +53,8 @@ pub enum InstanceCommand {
     Wait(InstanceWaitArgs),
     ///Restart openstack instances (vms)
     Restart(InstanceRestartArgs),
+    ///Set metadata openstack instances (vms)
+    SetMetadata(InstanceSetMetadataArgs),
     ///Set ok openstack instances (vms)
     SetOk(InstanceSetOkArgs),
     ///Start openstack instances (vms)
@@ -127,6 +131,7 @@ pub struct InstanceListArgs {
             "marketplace_plan_uuid",
             "marketplace_resource_state",
             "marketplace_resource_uuid",
+            "metadata",
             "min_disk",
             "min_ram",
             "modified",
@@ -284,6 +289,35 @@ pub struct InstanceRestartArgs {
     /// `uuid` field, so piping `list --format ndjson` straight in
     /// works without an intermediate `jq -r .uuid`.
     pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "instance_set_metadata_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct InstanceSetMetadataArgs {
+    pub uuid: String,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceSetOkArgs {
@@ -533,6 +567,32 @@ pub async fn run(
                     "{} of the batch failed: {}", failed.len(), failed.join(", ")
                 );
             }
+        }
+        InstanceCommand::SetMetadata(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(SET_METADATA_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(SET_METADATA_REQUEST_SCHEMA, &body)?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-instances/", args.uuid, "/set_metadata/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
         InstanceCommand::SetOk(args) => {
             let uuids = crate::batch::resolve_uuids(args.uuid)?;
