@@ -30,8 +30,8 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("tenant", crate::filter::FilterKind::Str),
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];
-const UPDATE_SKELETON: &str = "{\n  \"allocation_pools\": null,\n  \"cidr\": null,\n  \"description\": null,\n  \"disable_gateway\": null,\n  \"dns_nameservers\": null,\n  \"gateway_ip\": null,\n  \"host_routes\": null,\n  \"name\": \"\",\n  \"router\": null\n}";
-const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"allocation_pools\":{\"items\":{\"properties\":{\"end\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"start\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"end\",\"start\"],\"type\":\"object\"},\"type\":\"array\"},\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"disable_gateway\":{\"type\":\"boolean\"},\"dns_nameservers\":{\"items\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"type\":\"array\"},\"gateway_ip\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"host_routes\":{\"items\":{\"properties\":{\"destination\":{\"type\":\"string\"},\"nexthop\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"destination\",\"nexthop\"],\"type\":\"object\"},\"type\":\"array\"},\"name\":{\"type\":\"string\"},\"router\":{\"format\":\"uri\",\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
+const UPDATE_SKELETON: &str = "{\n  \"allocation_pools\": null,\n  \"cidr\": null,\n  \"description\": null,\n  \"disable_gateway\": null,\n  \"dns_nameservers\": null,\n  \"gateway_ip\": null,\n  \"host_routes\": null,\n  \"name\": \"\",\n  \"router\": null,\n  \"skip_router_connection\": null\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"allocation_pools\":{\"items\":{\"properties\":{\"end\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"start\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"end\",\"start\"],\"type\":\"object\"},\"type\":\"array\"},\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"disable_gateway\":{\"type\":\"boolean\"},\"dns_nameservers\":{\"items\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"type\":\"array\"},\"gateway_ip\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"host_routes\":{\"items\":{\"properties\":{\"destination\":{\"type\":\"string\"},\"nexthop\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"destination\",\"nexthop\"],\"type\":\"object\"},\"type\":\"array\"},\"name\":{\"type\":\"string\"},\"router\":{\"format\":\"uri\",\"type\":\"string\"},\"skip_router_connection\":{\"type\":\"boolean\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 ///OpenStack subnets
 #[derive(clap::Subcommand, Debug)]
 pub enum SubnetCommand {
@@ -115,6 +115,7 @@ pub struct SubnetListArgs {
             "service_settings_error_message",
             "service_settings_state",
             "service_settings_uuid",
+            "skip_router_connection",
             "state",
             "tenant",
             "tenant_name",
