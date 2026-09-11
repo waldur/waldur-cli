@@ -82,6 +82,7 @@ pub struct UserListArgs {
             "date_joined",
             "deactivation_reason",
             "description",
+            "details",
             "eduperson_assurance",
             "email",
             "first_name",
