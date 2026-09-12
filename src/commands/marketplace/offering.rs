@@ -82,6 +82,7 @@ pub struct OfferingListArgs {
             "backend_id",
             "backend_metadata",
             "billable",
+            "billing_mode_components",
             "billing_period_applies",
             "billing_type_classification",
             "can_update_integration",
