@@ -104,6 +104,7 @@ pub struct CustomerListArgs {
             "household",
             "image",
             "is_service_provider",
+            "is_service_provider_manager_only",
             "latitude",
             "longitude",
             "max_service_accounts",
