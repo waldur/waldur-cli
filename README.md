@@ -7,8 +7,8 @@ consuming machine-readable output.
 
 It covers a curated slice of the API:
 
-- **OpenStack** — tenants, instances, volumes, networks, subnets, security groups, floating
-  IPs, plus the flavor/image catalog
+- **OpenStack** — tenants, instances, volumes, networks, subnets, security groups and their
+  rules, routers, ports, floating IPs, plus the flavor/image catalog
 - **Team management** — customers, projects, users, roles
 - **Marketplace** — browse offerings, and provision/terminate OpenStack tenants, instances,
   and volumes through Waldur's order flow
