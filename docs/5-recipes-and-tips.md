@@ -143,10 +143,11 @@ traffic other than its own.
 
 There's no dedicated `ssh` command — Waldur doesn't broker a tunnel or manage private keys
 (it only stores the public key's name/fingerprint), so there's nothing for a wrapper to add
-over the system `ssh` binary beyond looking up the address. That's one `--jmespath` away:
+over the system `ssh` binary beyond looking up the address. That's one `jq` away (`get` has
+no `--jmespath` of its own):
 
 ```bash
-ssh ubuntu@$(waldur-cli openstack instance get <uuid> --jmespath 'external_ips[0]')
+ssh ubuntu@$(waldur-cli openstack instance get <uuid> --format json | jq -r '.external_ips[0]')
 ```
 
 Swap the username for whatever the instance's image actually uses (`ubuntu`, `centos`,
