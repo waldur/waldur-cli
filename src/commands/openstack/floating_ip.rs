@@ -35,6 +35,8 @@ pub enum FloatingIpCommand {
     Get(FloatingIpGetArgs),
     ///Delete openstack floating ips
     Delete(FloatingIpDeleteArgs),
+    ///Wait for a --jmespath condition on openstack floating ips
+    Wait(FloatingIpWaitArgs),
     ///Detach from port openstack floating ips
     DetachFromPort(FloatingIpDetachFromPortArgs),
     ///Set ok openstack floating ips
@@ -129,6 +131,22 @@ pub struct FloatingIpDeleteArgs {
     /// `uuid` field, so piping `list --format ndjson` straight in
     /// works without an intermediate `jq -r .uuid`.
     pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct FloatingIpWaitArgs {
+    pub uuid: String,
+    /// JMESPath condition to poll for, evaluated against the
+    /// fetched object on every poll (e.g. "state=='OK'").
+    /// Waiting stops as soon as this evaluates to anything
+    /// other than false or null.
+    #[arg(long)]
+    pub jmespath: String,
+    /// Seconds to wait for the condition before giving up.
+    #[arg(long, default_value_t = 600)]
+    pub timeout: u64,
+    /// Seconds between polls.
+    #[arg(long, default_value_t = 3)]
+    pub interval: u64,
 }
 #[derive(clap::Args, Debug)]
 pub struct FloatingIpDetachFromPortArgs {
@@ -283,6 +301,20 @@ pub async fn run(
                     "{} of the batch failed: {}", failed.len(), failed.join(", ")
                 );
             }
+        }
+        FloatingIpCommand::Wait(args) => {
+            let path = format!("{}{}{}", "/api/openstack-floating-ips/", args.uuid, "/");
+            crate::wait::wait_for(
+                    base_url,
+                    token,
+                    &path,
+                    &args.jmespath,
+                    args.timeout,
+                    args.interval,
+                    COLUMNS,
+                    format,
+                )
+                .await?;
         }
         FloatingIpCommand::DetachFromPort(args) => {
             let uuids = crate::batch::resolve_uuids(args.uuid)?;

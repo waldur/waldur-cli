@@ -26,6 +26,14 @@ const TENANT_WEB_PATH: &str = "/resource-details/{uuid}";
 const UPDATE_SKELETON: &str = "{\n  \"availability_zone\": null,\n  \"default_volume_type_name\": null,\n  \"description\": null,\n  \"name\": \"\",\n  \"security_groups\": null,\n  \"skip_creation_of_default_router\": null,\n  \"skip_creation_of_default_subnet\": null\n}";
 const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"availability_zone\":{\"type\":\"string\"},\"default_volume_type_name\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"security_groups\":{\"items\":{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"rules\":{\"items\":{\"properties\":{\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"direction\":{\"allOf\":[{\"enum\":[\"ingress\",\"egress\"]}]},\"ethertype\":{\"allOf\":[{\"enum\":[\"IPv4\",\"IPv6\"]}]},\"from_port\":{\"type\":\"integer\"},\"protocol\":{\"type\":\"string\"},\"remote_group\":{\"format\":\"uri\",\"type\":\"string\"},\"to_port\":{\"type\":\"integer\"}},\"required\":[],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"name\"],\"type\":\"object\"},\"type\":\"array\"},\"skip_creation_of_default_router\":{\"type\":\"boolean\"},\"skip_creation_of_default_subnet\":{\"type\":\"boolean\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"availability_zone\": null,\n    \"description\": null,\n    \"name\": \"\",\n    \"security_groups\": null,\n    \"skip_connection_extnet\": null,\n    \"skip_creation_of_default_router\": null,\n    \"skip_creation_of_default_subnet\": null,\n    \"subnet_cidr\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"start_date\": null\n}";
+const CREATE_FLOATING_IP_SKELETON: &str = "{\n  \"router\": null\n}";
+const CREATE_FLOATING_IP_REQUEST_SCHEMA: &str = "{\"properties\":{\"router\":{\"format\":\"uri\",\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}";
+const CREATE_NETWORK_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\"\n}";
+const CREATE_NETWORK_REQUEST_SCHEMA: &str = "{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
+const CREATE_SECURITY_GROUP_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\",\n  \"rules\": [\n    {\n      \"cidr\": null,\n      \"description\": null,\n      \"direction\": null,\n      \"ethertype\": null,\n      \"from_port\": null,\n      \"protocol\": null,\n      \"remote_group\": null,\n      \"to_port\": null\n    }\n  ]\n}";
+const CREATE_SECURITY_GROUP_REQUEST_SCHEMA: &str = "{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"rules\":{\"items\":{\"properties\":{\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"direction\":{\"allOf\":[{\"enum\":[\"ingress\",\"egress\"]}]},\"ethertype\":{\"allOf\":[{\"enum\":[\"IPv4\",\"IPv6\"]}]},\"from_port\":{\"type\":\"integer\"},\"protocol\":{\"type\":\"string\"},\"remote_group\":{\"format\":\"uri\",\"type\":\"string\"},\"to_port\":{\"type\":\"integer\"}},\"required\":[],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"name\",\"rules\"],\"type\":\"object\"}";
+const CREATE_SERVER_GROUP_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\",\n  \"policy\": null\n}";
+const CREATE_SERVER_GROUP_REQUEST_SCHEMA: &str = "{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"policy\":{\"oneOf\":[{\"enum\":[\"affinity\",\"anti-affinity\",\"soft-affinity\",\"soft-anti-affinity\"]},{\"enum\":[\"\"]}]}},\"required\":[\"name\"],\"type\":\"object\"}";
 ///OpenStack tenants
 #[derive(clap::Subcommand, Debug)]
 pub enum TenantCommand {
@@ -41,6 +49,18 @@ pub enum TenantCommand {
     Terminate(TenantTerminateArgs),
     ///Wait for a --jmespath condition on openstack tenants
     Wait(TenantWaitArgs),
+    ///Create floating ip openstack tenants
+    CreateFloatingIp(TenantCreateFloatingIpArgs),
+    ///Create network openstack tenants
+    CreateNetwork(TenantCreateNetworkArgs),
+    ///Create security group openstack tenants
+    CreateSecurityGroup(TenantCreateSecurityGroupArgs),
+    ///Create server group openstack tenants
+    CreateServerGroup(TenantCreateServerGroupArgs),
+    ///Set ok openstack tenants
+    SetOk(TenantSetOkArgs),
+    ///Unlink openstack tenants
+    Unlink(TenantUnlinkArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct TenantListArgs {
@@ -230,6 +250,138 @@ pub struct TenantWaitArgs {
     #[arg(long, default_value_t = 3)]
     pub interval: u64,
 }
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "tenant_create_floating_ip_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct TenantCreateFloatingIpArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "tenant_create_network_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct TenantCreateNetworkArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "tenant_create_security_group_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct TenantCreateSecurityGroupArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "tenant_create_server_group_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct TenantCreateServerGroupArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+pub struct TenantSetOkArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct TenantUnlinkArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
 pub async fn run(
     base_url: &str,
     token: Option<&str>,
@@ -400,6 +552,201 @@ pub async fn run(
                     format,
                 )
                 .await?;
+        }
+        TenantCommand::CreateFloatingIp(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(CREATE_FLOATING_IP_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                CREATE_FLOATING_IP_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-tenants/", uuid, "/create_floating_ip/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        TenantCommand::CreateNetwork(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(CREATE_NETWORK_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(CREATE_NETWORK_REQUEST_SCHEMA, &body)?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-tenants/", uuid, "/create_network/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        TenantCommand::CreateSecurityGroup(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(CREATE_SECURITY_GROUP_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                CREATE_SECURITY_GROUP_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-tenants/", uuid, "/create_security_group/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        TenantCommand::CreateServerGroup(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(CREATE_SERVER_GROUP_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                CREATE_SERVER_GROUP_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-tenants/", uuid, "/create_server_group/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        TenantCommand::SetOk(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-tenants/", uuid, "/set_ok/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        TenantCommand::Unlink(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-tenants/", uuid, "/unlink/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
     }
     Ok(())

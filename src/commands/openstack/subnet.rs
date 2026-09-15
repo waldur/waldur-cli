@@ -30,8 +30,8 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("tenant", crate::filter::FilterKind::Str),
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];
-const UPDATE_SKELETON: &str = "{\n  \"allocation_pools\": null,\n  \"cidr\": null,\n  \"description\": null,\n  \"disable_gateway\": null,\n  \"dns_nameservers\": null,\n  \"gateway_ip\": null,\n  \"host_routes\": null,\n  \"name\": \"\",\n  \"router\": null,\n  \"skip_router_connection\": null\n}";
-const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"allocation_pools\":{\"items\":{\"properties\":{\"end\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"start\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"end\",\"start\"],\"type\":\"object\"},\"type\":\"array\"},\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"disable_gateway\":{\"type\":\"boolean\"},\"dns_nameservers\":{\"items\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"type\":\"array\"},\"gateway_ip\":{\"format\":\"ipv4\",\"type\":\"string\"},\"host_routes\":{\"items\":{\"properties\":{\"destination\":{\"type\":\"string\"},\"nexthop\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"destination\",\"nexthop\"],\"type\":\"object\"},\"type\":\"array\"},\"name\":{\"type\":\"string\"},\"router\":{\"format\":\"uri\",\"type\":\"string\"},\"skip_router_connection\":{\"type\":\"boolean\"}},\"required\":[\"name\"],\"type\":\"object\"}";
+const UPDATE_SKELETON: &str = "{\n  \"allocation_pools\": null,\n  \"cidr\": null,\n  \"description\": null,\n  \"disable_gateway\": null,\n  \"dns_nameservers\": null,\n  \"gateway_ip\": null,\n  \"host_routes\": null,\n  \"ipv6_address_mode\": null,\n  \"ipv6_ra_mode\": null,\n  \"name\": \"\",\n  \"router\": null,\n  \"skip_router_connection\": null\n}";
+const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"allocation_pools\":{\"items\":{\"properties\":{\"end\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"start\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"end\",\"start\"],\"type\":\"object\"},\"type\":\"array\"},\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"disable_gateway\":{\"type\":\"boolean\"},\"dns_nameservers\":{\"items\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"type\":\"array\"},\"gateway_ip\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"host_routes\":{\"items\":{\"properties\":{\"destination\":{\"type\":\"string\"},\"nexthop\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"destination\",\"nexthop\"],\"type\":\"object\"},\"type\":\"array\"},\"ipv6_address_mode\":{\"oneOf\":[{\"enum\":[\"slaac\",\"dhcpv6-stateful\",\"dhcpv6-stateless\"]},{\"enum\":[\"null\"]}]},\"ipv6_ra_mode\":{\"oneOf\":[{\"enum\":[\"slaac\",\"dhcpv6-stateful\",\"dhcpv6-stateless\"]},{\"enum\":[\"null\"]}]},\"name\":{\"type\":\"string\"},\"router\":{\"format\":\"uri\",\"type\":\"string\"},\"skip_router_connection\":{\"type\":\"boolean\"}},\"required\":[\"name\"],\"type\":\"object\"}";
 ///OpenStack subnets
 #[derive(clap::Subcommand, Debug)]
 pub enum SubnetCommand {
@@ -43,6 +43,16 @@ pub enum SubnetCommand {
     Update(SubnetUpdateArgs),
     ///Delete openstack subnets
     Delete(SubnetDeleteArgs),
+    ///Wait for a --jmespath condition on openstack subnets
+    Wait(SubnetWaitArgs),
+    ///Connect openstack subnets
+    Connect(SubnetConnectArgs),
+    ///Disconnect openstack subnets
+    Disconnect(SubnetDisconnectArgs),
+    ///Set ok openstack subnets
+    SetOk(SubnetSetOkArgs),
+    ///Unlink openstack subnets
+    Unlink(SubnetUnlinkArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct SubnetListArgs {
@@ -86,6 +96,8 @@ pub struct SubnetListArgs {
             "gateway_ip",
             "host_routes",
             "ip_version",
+            "ipv6_address_mode",
+            "ipv6_ra_mode",
             "is_connected",
             "is_limit_based",
             "is_usage_based",
@@ -160,6 +172,54 @@ pub struct SubnetUpdateArgs {
 }
 #[derive(clap::Args, Debug)]
 pub struct SubnetDeleteArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct SubnetWaitArgs {
+    pub uuid: String,
+    /// JMESPath condition to poll for, evaluated against the
+    /// fetched object on every poll (e.g. "state=='OK'").
+    /// Waiting stops as soon as this evaluates to anything
+    /// other than false or null.
+    #[arg(long)]
+    pub jmespath: String,
+    /// Seconds to wait for the condition before giving up.
+    #[arg(long, default_value_t = 600)]
+    pub timeout: u64,
+    /// Seconds between polls.
+    #[arg(long, default_value_t = 3)]
+    pub interval: u64,
+}
+#[derive(clap::Args, Debug)]
+pub struct SubnetConnectArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct SubnetDisconnectArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct SubnetSetOkArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct SubnetUnlinkArgs {
     /// UUID(s) to operate on. Omit to read them from stdin instead,
     /// one per line -- either a bare UUID or a JSON object with a
     /// `uuid` field, so piping `list --format ndjson` straight in
@@ -312,6 +372,152 @@ pub async fn run(
                             }
                         }
                     }
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        SubnetCommand::Wait(args) => {
+            let path = format!("{}{}{}", "/api/openstack-subnets/", args.uuid, "/");
+            crate::wait::wait_for(
+                    base_url,
+                    token,
+                    &path,
+                    &args.jmespath,
+                    args.timeout,
+                    args.interval,
+                    COLUMNS,
+                    format,
+                )
+                .await?;
+        }
+        SubnetCommand::Connect(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-subnets/", uuid, "/connect/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        SubnetCommand::Disconnect(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-subnets/", uuid, "/disconnect/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        SubnetCommand::SetOk(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-subnets/", uuid, "/set_ok/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        SubnetCommand::Unlink(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-subnets/", uuid, "/unlink/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
                     Err(err) => {
                         crate::batch::report_error(&uuid, &err);
                         failed.push(uuid);

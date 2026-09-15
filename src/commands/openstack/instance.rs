@@ -299,7 +299,7 @@ pub struct InstanceRestartArgs {
     )
 )]
 pub struct InstanceSetMetadataArgs {
-    pub uuid: String,
+    pub uuid: Option<String>,
     /// Request body as inline JSON. Use --generate-skeleton for
     /// a template, or --request-file to read it from a file.
     #[arg(long)]
@@ -578,8 +578,12 @@ pub async fn run(
                 args.request_file.as_deref(),
             )?;
             crate::request::validate_request_body(SET_METADATA_REQUEST_SCHEMA, &body)?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
             let path = format!(
-                "{}{}{}", "/api/openstack-instances/", args.uuid, "/set_metadata/"
+                "{}{}{}", "/api/openstack-instances/", uuid, "/set_metadata/"
             );
             if dry_run {
                 return crate::output::print_dry_run("POST", &path, Some(&body), format);

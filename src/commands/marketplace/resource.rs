@@ -120,6 +120,7 @@ pub struct ResourceListArgs {
             "modified",
             "name",
             "offering",
+            "offering_account_settings",
             "offering_backend_id",
             "offering_billable",
             "offering_components",

@@ -78,6 +78,7 @@ pub struct OfferingListArgs {
         value_delimiter = ',',
         value_parser = clap::builder::PossibleValuesParser::new(
             ["access_url",
+            "account_settings",
             "attributes",
             "backend_id",
             "backend_metadata",

@@ -30,6 +30,10 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
 ];
 const UPDATE_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\"\n}";
 const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
+const CREATE_SUBNET_SKELETON: &str = "{\n  \"allocation_pools\": null,\n  \"cidr\": null,\n  \"description\": null,\n  \"disable_gateway\": null,\n  \"dns_nameservers\": null,\n  \"gateway_ip\": null,\n  \"host_routes\": null,\n  \"ipv6_address_mode\": null,\n  \"ipv6_ra_mode\": null,\n  \"name\": \"\",\n  \"router\": null,\n  \"skip_router_connection\": null\n}";
+const CREATE_SUBNET_REQUEST_SCHEMA: &str = "{\"properties\":{\"allocation_pools\":{\"items\":{\"properties\":{\"end\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"start\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"end\",\"start\"],\"type\":\"object\"},\"type\":\"array\"},\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"disable_gateway\":{\"type\":\"boolean\"},\"dns_nameservers\":{\"items\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"type\":\"array\"},\"gateway_ip\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]},\"host_routes\":{\"items\":{\"properties\":{\"destination\":{\"type\":\"string\"},\"nexthop\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"destination\",\"nexthop\"],\"type\":\"object\"},\"type\":\"array\"},\"ipv6_address_mode\":{\"oneOf\":[{\"enum\":[\"slaac\",\"dhcpv6-stateful\",\"dhcpv6-stateless\"]},{\"enum\":[\"null\"]}]},\"ipv6_ra_mode\":{\"oneOf\":[{\"enum\":[\"slaac\",\"dhcpv6-stateful\",\"dhcpv6-stateless\"]},{\"enum\":[\"null\"]}]},\"name\":{\"type\":\"string\"},\"router\":{\"format\":\"uri\",\"type\":\"string\"},\"skip_router_connection\":{\"type\":\"boolean\"}},\"required\":[\"name\"],\"type\":\"object\"}";
+const SET_MTU_SKELETON: &str = "{\n  \"mtu\": 0\n}";
+const SET_MTU_REQUEST_SCHEMA: &str = "{\"properties\":{\"mtu\":{\"type\":\"integer\"}},\"required\":[\"mtu\"],\"type\":\"object\"}";
 ///OpenStack networks
 #[derive(clap::Subcommand, Debug)]
 pub enum NetworkCommand {
@@ -41,6 +45,16 @@ pub enum NetworkCommand {
     Update(NetworkUpdateArgs),
     ///Delete openstack networks
     Delete(NetworkDeleteArgs),
+    ///Wait for a --jmespath condition on openstack networks
+    Wait(NetworkWaitArgs),
+    ///Create subnet openstack networks
+    CreateSubnet(NetworkCreateSubnetArgs),
+    ///Set mtu openstack networks
+    SetMtu(NetworkSetMtuArgs),
+    ///Set ok openstack networks
+    SetOk(NetworkSetOkArgs),
+    ///Unlink openstack networks
+    Unlink(NetworkUnlinkArgs),
 }
 #[derive(clap::Args, Debug)]
 pub struct NetworkListArgs {
@@ -150,6 +164,96 @@ pub struct NetworkUpdateArgs {
 }
 #[derive(clap::Args, Debug)]
 pub struct NetworkDeleteArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct NetworkWaitArgs {
+    pub uuid: String,
+    /// JMESPath condition to poll for, evaluated against the
+    /// fetched object on every poll (e.g. "state=='OK'").
+    /// Waiting stops as soon as this evaluates to anything
+    /// other than false or null.
+    #[arg(long)]
+    pub jmespath: String,
+    /// Seconds to wait for the condition before giving up.
+    #[arg(long, default_value_t = 600)]
+    pub timeout: u64,
+    /// Seconds between polls.
+    #[arg(long, default_value_t = 3)]
+    pub interval: u64,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "network_create_subnet_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct NetworkCreateSubnetArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "network_set_mtu_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct NetworkSetMtuArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+pub struct NetworkSetOkArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+pub struct NetworkUnlinkArgs {
     /// UUID(s) to operate on. Omit to read them from stdin instead,
     /// one per line -- either a bare UUID or a JSON object with a
     /// `uuid` field, so piping `list --format ndjson` straight in
@@ -302,6 +406,144 @@ pub async fn run(
                             }
                         }
                     }
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        NetworkCommand::Wait(args) => {
+            let path = format!("{}{}{}", "/api/openstack-networks/", args.uuid, "/");
+            crate::wait::wait_for(
+                    base_url,
+                    token,
+                    &path,
+                    &args.jmespath,
+                    args.timeout,
+                    args.interval,
+                    COLUMNS,
+                    format,
+                )
+                .await?;
+        }
+        NetworkCommand::CreateSubnet(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(CREATE_SUBNET_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(CREATE_SUBNET_REQUEST_SCHEMA, &body)?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-networks/", uuid, "/create_subnet/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        NetworkCommand::SetMtu(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(SET_MTU_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(SET_MTU_REQUEST_SCHEMA, &body)?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!("{}{}{}", "/api/openstack-networks/", uuid, "/set_mtu/");
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        NetworkCommand::SetOk(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-networks/", uuid, "/set_ok/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        NetworkCommand::Unlink(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-networks/", uuid, "/unlink/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
                     Err(err) => {
                         crate::batch::report_error(&uuid, &err);
                         failed.push(uuid);

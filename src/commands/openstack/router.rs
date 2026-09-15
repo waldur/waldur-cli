@@ -2,55 +2,52 @@
 //! see that repo's README for how to regenerate.
 #![allow(clippy::too_many_arguments)]
 use anyhow::Context;
-const COLUMNS: &[&str; 4usize] = &["uuid", "name", "state", "project_name"];
+const COLUMNS: &[&str; 4usize] = &["uuid", "name", "state", "tenant_name"];
 const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
-    ("backend_id", crate::filter::FilterKind::Str),
-    ("can_manage", crate::filter::FilterKind::Bool),
-    ("customer", crate::filter::FilterKind::Str),
-    ("customer_abbreviation", crate::filter::FilterKind::Str),
-    ("customer_name", crate::filter::FilterKind::Str),
-    ("customer_native_name", crate::filter::FilterKind::Str),
-    ("customer_uuid", crate::filter::FilterKind::Str),
-    ("description", crate::filter::FilterKind::Str),
-    ("external_ip", crate::filter::FilterKind::Str),
     ("name", crate::filter::FilterKind::Str),
     ("name_exact", crate::filter::FilterKind::Str),
-    ("project", crate::filter::FilterKind::Str),
-    ("project_name", crate::filter::FilterKind::Str),
-    ("project_uuid", crate::filter::FilterKind::Str),
-    ("query", crate::filter::FilterKind::Str),
-    ("service_settings_name", crate::filter::FilterKind::Str),
-    ("service_settings_uuid", crate::filter::FilterKind::Str),
     ("state", crate::filter::FilterKind::Str),
     ("tenant", crate::filter::FilterKind::Str),
     ("tenant_uuid", crate::filter::FilterKind::Str),
 ];
-const UPDATE_SKELETON: &str = "{\n  \"description\": null,\n  \"name\": \"\"\n}";
-const UPDATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}";
-const SET_RULES_SKELETON: &str = "[\n  {\n    \"cidr\": null,\n    \"description\": null,\n    \"direction\": null,\n    \"ethertype\": null,\n    \"from_port\": null,\n    \"protocol\": null,\n    \"remote_group\": null,\n    \"to_port\": null\n  }\n]";
-const SET_RULES_REQUEST_SCHEMA: &str = "{\"items\":{\"properties\":{\"cidr\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"direction\":{\"allOf\":[{\"enum\":[\"ingress\",\"egress\"]}]},\"ethertype\":{\"allOf\":[{\"enum\":[\"IPv4\",\"IPv6\"]}]},\"from_port\":{\"type\":\"integer\"},\"protocol\":{\"type\":\"string\"},\"remote_group\":{\"format\":\"uri\",\"type\":\"string\"},\"to_port\":{\"type\":\"integer\"}},\"required\":[],\"type\":\"object\"},\"type\":\"array\"}";
-///OpenStack security groups
+const CREATE_SKELETON: &str = "{\n  \"name\": \"\",\n  \"tenant\": \"\"\n}";
+const CREATE_REQUEST_SCHEMA: &str = "{\"properties\":{\"name\":{\"type\":\"string\"},\"tenant\":{\"format\":\"uri\",\"type\":\"string\"}},\"required\":[\"name\",\"tenant\"],\"type\":\"object\"}";
+const ADD_ROUTER_INTERFACE_SKELETON: &str = "{\n  \"port\": null,\n  \"subnet\": null\n}";
+const ADD_ROUTER_INTERFACE_REQUEST_SCHEMA: &str = "{\"properties\":{\"port\":{\"format\":\"uri\",\"type\":\"string\"},\"subnet\":{\"format\":\"uri\",\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}";
+const REMOVE_ROUTER_INTERFACE_SKELETON: &str = "{\n  \"port\": null,\n  \"subnet\": null\n}";
+const REMOVE_ROUTER_INTERFACE_REQUEST_SCHEMA: &str = "{\"properties\":{\"port\":{\"format\":\"uri\",\"type\":\"string\"},\"subnet\":{\"format\":\"uri\",\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}";
+const SET_EXTERNAL_GATEWAY_SKELETON: &str = "{\n  \"enable_snat\": null,\n  \"external_fixed_ips\": null,\n  \"external_network_id\": \"\"\n}";
+const SET_EXTERNAL_GATEWAY_REQUEST_SCHEMA: &str = "{\"properties\":{\"enable_snat\":{\"type\":\"boolean\"},\"external_fixed_ips\":{\"items\":{\"properties\":{\"ip_address\":{\"type\":\"string\"},\"subnet_id\":{\"type\":\"string\"}},\"required\":[\"ip_address\"],\"type\":\"object\"},\"type\":\"array\"},\"external_network_id\":{\"type\":\"string\"}},\"required\":[\"external_network_id\"],\"type\":\"object\"}";
+const SET_ROUTES_SKELETON: &str = "{\n  \"routes\": [\n    {\n      \"destination\": \"\",\n      \"nexthop\": \"\"\n    }\n  ]\n}";
+const SET_ROUTES_REQUEST_SCHEMA: &str = "{\"properties\":{\"routes\":{\"items\":{\"properties\":{\"destination\":{\"type\":\"string\"},\"nexthop\":{\"oneOf\":[{\"format\":\"ipv4\",\"type\":\"string\"},{\"format\":\"ipv6\",\"type\":\"string\"}]}},\"required\":[\"destination\",\"nexthop\"],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"routes\"],\"type\":\"object\"}";
+///OpenStack routers
 #[derive(clap::Subcommand, Debug)]
-pub enum SecurityGroupCommand {
-    ///List openstack security groups
-    List(SecurityGroupListArgs),
-    ///Get openstack security groups
-    Get(SecurityGroupGetArgs),
-    ///Update openstack security groups
-    Update(SecurityGroupUpdateArgs),
-    ///Delete openstack security groups
-    Delete(SecurityGroupDeleteArgs),
-    ///Wait for a --jmespath condition on openstack security groups
-    Wait(SecurityGroupWaitArgs),
-    ///Set ok openstack security groups
-    SetOk(SecurityGroupSetOkArgs),
-    ///Set rules openstack security groups
-    SetRules(SecurityGroupSetRulesArgs),
-    ///Unlink openstack security groups
-    Unlink(SecurityGroupUnlinkArgs),
+pub enum RouterCommand {
+    ///List openstack routers
+    List(RouterListArgs),
+    ///Get openstack routers
+    Get(RouterGetArgs),
+    ///Create openstack routers
+    Create(RouterCreateArgs),
+    ///Delete openstack routers
+    Delete(RouterDeleteArgs),
+    ///Wait for a --jmespath condition on openstack routers
+    Wait(RouterWaitArgs),
+    ///Add router interface openstack routers
+    AddRouterInterface(RouterAddRouterInterfaceArgs),
+    ///Remove external gateway openstack routers
+    RemoveExternalGateway(RouterRemoveExternalGatewayArgs),
+    ///Remove router interface openstack routers
+    RemoveRouterInterface(RouterRemoveRouterInterfaceArgs),
+    ///Set external gateway openstack routers
+    SetExternalGateway(RouterSetExternalGatewayArgs),
+    ///Set ok openstack routers
+    SetOk(RouterSetOkArgs),
+    ///Set routes openstack routers
+    SetRoutes(RouterSetRoutesArgs),
 }
 #[derive(clap::Args, Debug)]
-pub struct SecurityGroupListArgs {
+pub struct RouterListArgs {
     /// Filter results server-side, KEY=VALUE (repeatable). See
     /// --help's error on an unknown key for the valid keys.
     #[arg(long = "filter", value_name = "KEY=VALUE")]
@@ -81,9 +78,15 @@ pub struct SecurityGroupListArgs {
             "customer_native_name",
             "customer_uuid",
             "description",
+            "enable_snat",
             "error_message",
             "error_traceback",
-            "instance_count",
+            "external_fixed_ips",
+            "external_network_id",
+            "external_network_name",
+            "external_network_uuid",
+            "fixed_ips",
+            "has_external_gateway",
             "is_limit_based",
             "is_usage_based",
             "marketplace_category_name",
@@ -97,11 +100,13 @@ pub struct SecurityGroupListArgs {
             "marketplace_resource_uuid",
             "modified",
             "name",
+            "offering_external_ips",
+            "ports",
             "project",
             "project_name",
             "project_uuid",
             "resource_type",
-            "rules",
+            "routes",
             "service_name",
             "service_settings",
             "service_settings_error_message",
@@ -118,19 +123,18 @@ pub struct SecurityGroupListArgs {
     pub fields: Option<Vec<String>>,
 }
 #[derive(clap::Args, Debug)]
-pub struct SecurityGroupGetArgs {
+pub struct RouterGetArgs {
     pub uuid: String,
 }
 #[derive(clap::Args, Debug)]
 #[command(
     group(
         clap::ArgGroup::new(
-            "security_group_update_body"
+            "router_create_body"
         ).required(true).args(["request", "request_file", "generate_skeleton"])
     )
 )]
-pub struct SecurityGroupUpdateArgs {
-    pub uuid: Option<String>,
+pub struct RouterCreateArgs {
     /// Request body as inline JSON. Use --generate-skeleton for a
     /// template, or --request-file to read it from a file.
     #[arg(long)]
@@ -151,7 +155,7 @@ pub struct SecurityGroupUpdateArgs {
     pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 #[derive(clap::Args, Debug)]
-pub struct SecurityGroupDeleteArgs {
+pub struct RouterDeleteArgs {
     /// UUID(s) to operate on. Omit to read them from stdin instead,
     /// one per line -- either a bare UUID or a JSON object with a
     /// `uuid` field, so piping `list --format ndjson` straight in
@@ -159,7 +163,7 @@ pub struct SecurityGroupDeleteArgs {
     pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
-pub struct SecurityGroupWaitArgs {
+pub struct RouterWaitArgs {
     pub uuid: String,
     /// JMESPath condition to poll for, evaluated against the
     /// fetched object on every poll (e.g. "state=='OK'").
@@ -175,22 +179,14 @@ pub struct SecurityGroupWaitArgs {
     pub interval: u64,
 }
 #[derive(clap::Args, Debug)]
-pub struct SecurityGroupSetOkArgs {
-    /// UUID(s) to operate on. Omit to read them from stdin instead,
-    /// one per line -- either a bare UUID or a JSON object with a
-    /// `uuid` field, so piping `list --format ndjson` straight in
-    /// works without an intermediate `jq -r .uuid`.
-    pub uuid: Vec<String>,
-}
-#[derive(clap::Args, Debug)]
 #[command(
     group(
         clap::ArgGroup::new(
-            "security_group_set_rules_body"
+            "router_add_router_interface_body"
         ).required(true).args(["request", "request_file", "generate_skeleton"])
     )
 )]
-pub struct SecurityGroupSetRulesArgs {
+pub struct RouterAddRouterInterfaceArgs {
     pub uuid: Option<String>,
     /// Request body as inline JSON. Use --generate-skeleton for
     /// a template, or --request-file to read it from a file.
@@ -212,32 +208,122 @@ pub struct SecurityGroupSetRulesArgs {
     pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 #[derive(clap::Args, Debug)]
-pub struct SecurityGroupUnlinkArgs {
+pub struct RouterRemoveExternalGatewayArgs {
     /// UUID(s) to operate on. Omit to read them from stdin instead,
     /// one per line -- either a bare UUID or a JSON object with a
     /// `uuid` field, so piping `list --format ndjson` straight in
     /// works without an intermediate `jq -r .uuid`.
     pub uuid: Vec<String>,
 }
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "router_remove_router_interface_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct RouterRemoveRouterInterfaceArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "router_set_external_gateway_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct RouterSetExternalGatewayArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+pub struct RouterSetOkArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "router_set_routes_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct RouterSetRoutesArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
 pub async fn run(
     base_url: &str,
     token: Option<&str>,
-    project: Option<&str>,
+    _project: Option<&str>,
     dry_run: bool,
-    command: SecurityGroupCommand,
+    command: RouterCommand,
     format: crate::output::OutputFormat,
 ) -> anyhow::Result<()> {
     match command {
-        SecurityGroupCommand::List(args) => {
+        RouterCommand::List(args) => {
             let mut query_params: Vec<(String, String)> = crate::filter::parse_filters(
                 &args.filter,
                 FILTER_SPEC,
             )?;
-            if let Some(project) = project {
-                if !query_params.iter().any(|(k, _)| k == "project_uuid") {
-                    query_params.push(("project_uuid".to_string(), project.to_string()));
-                }
-            }
             match &args.fields {
                 Some(fields) => {
                     for f in fields {
@@ -258,7 +344,7 @@ pub async fn run(
                 crate::pagination::fetch_all_streaming(
                         base_url,
                         token,
-                        "/api/openstack-security-groups/",
+                        "/api/openstack-routers/",
                         &query_params,
                         args.limit,
                         |item| crate::output::print_ndjson_line(&item),
@@ -268,7 +354,7 @@ pub async fn run(
                 let result = crate::pagination::fetch_all(
                         base_url,
                         token,
-                        "/api/openstack-security-groups/",
+                        "/api/openstack-routers/",
                         &query_params,
                         args.limit,
                     )
@@ -285,10 +371,8 @@ pub async fn run(
                 crate::output::print_result(&result, &display_columns, format)?;
             }
         }
-        SecurityGroupCommand::Get(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-security-groups/", args.uuid, "/"
-            );
+        RouterCommand::Get(args) => {
+            let path = format!("{}{}{}", "/api/openstack-routers/", args.uuid, "/");
             let result = crate::http::call_one(
                     base_url,
                     token,
@@ -299,41 +383,35 @@ pub async fn run(
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
-        SecurityGroupCommand::Update(args) => {
+        RouterCommand::Create(args) => {
             if let Some(fmt) = args.generate_skeleton {
-                crate::request::print_skeleton(UPDATE_SKELETON, fmt)?;
+                crate::request::print_skeleton(CREATE_SKELETON, fmt)?;
                 return Ok(());
             }
             let body = crate::request::load_body(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            crate::request::validate_request_body(UPDATE_REQUEST_SCHEMA, &body)?;
-            let uuid = args
-                .uuid
-                .as_deref()
-                .context("this command requires a <uuid> argument")?;
-            let path = format!("{}{}{}", "/api/openstack-security-groups/", uuid, "/");
+            crate::request::validate_request_body(CREATE_REQUEST_SCHEMA, &body)?;
+            let path = "/api/openstack-routers/".to_string();
             if dry_run {
-                return crate::output::print_dry_run("PUT", &path, Some(&body), format);
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
             }
             let result = crate::http::call_one(
                     base_url,
                     token,
-                    reqwest::Method::PUT,
+                    reqwest::Method::POST,
                     &path,
                     Some(&body),
                 )
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
-        SecurityGroupCommand::Delete(args) => {
+        RouterCommand::Delete(args) => {
             let uuids = crate::batch::resolve_uuids(args.uuid)?;
             let mut failed = Vec::new();
             for uuid in uuids {
-                let path = format!(
-                    "{}{}{}", "/api/openstack-security-groups/", uuid, "/"
-                );
+                let path = format!("{}{}{}", "/api/openstack-routers/", uuid, "/");
                 if dry_run {
                     crate::output::print_dry_run("DELETE", &path, None, format)?;
                     continue;
@@ -381,10 +459,8 @@ pub async fn run(
                 );
             }
         }
-        SecurityGroupCommand::Wait(args) => {
-            let path = format!(
-                "{}{}{}", "/api/openstack-security-groups/", args.uuid, "/"
-            );
+        RouterCommand::Wait(args) => {
+            let path = format!("{}{}{}", "/api/openstack-routers/", args.uuid, "/");
             crate::wait::wait_for(
                     base_url,
                     token,
@@ -397,55 +473,25 @@ pub async fn run(
                 )
                 .await?;
         }
-        SecurityGroupCommand::SetOk(args) => {
-            let uuids = crate::batch::resolve_uuids(args.uuid)?;
-            let mut failed = Vec::new();
-            for uuid in uuids {
-                let path = format!(
-                    "{}{}{}", "/api/openstack-security-groups/", uuid, "/set_ok/"
-                );
-                if dry_run {
-                    crate::output::print_dry_run("POST", &path, None, format)?;
-                    continue;
-                }
-                match crate::http::call_one(
-                        base_url,
-                        token,
-                        reqwest::Method::POST,
-                        &path,
-                        None,
-                    )
-                    .await
-                {
-                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
-                    Err(err) => {
-                        crate::batch::report_error(&uuid, &err);
-                        failed.push(uuid);
-                    }
-                }
-            }
-            if !failed.is_empty() {
-                anyhow::bail!(
-                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
-                );
-            }
-        }
-        SecurityGroupCommand::SetRules(args) => {
+        RouterCommand::AddRouterInterface(args) => {
             if let Some(fmt) = args.generate_skeleton {
-                crate::request::print_skeleton(SET_RULES_SKELETON, fmt)?;
+                crate::request::print_skeleton(ADD_ROUTER_INTERFACE_SKELETON, fmt)?;
                 return Ok(());
             }
             let body = crate::request::load_body(
                 args.request.as_deref(),
                 args.request_file.as_deref(),
             )?;
-            crate::request::validate_request_body(SET_RULES_REQUEST_SCHEMA, &body)?;
+            crate::request::validate_request_body(
+                ADD_ROUTER_INTERFACE_REQUEST_SCHEMA,
+                &body,
+            )?;
             let uuid = args
                 .uuid
                 .as_deref()
                 .context("this command requires a <uuid> argument")?;
             let path = format!(
-                "{}{}{}", "/api/openstack-security-groups/", uuid, "/set_rules/"
+                "{}{}{}", "/api/openstack-routers/", uuid, "/add_router_interface/"
             );
             if dry_run {
                 return crate::output::print_dry_run("POST", &path, Some(&body), format);
@@ -460,12 +506,13 @@ pub async fn run(
                 .await?;
             crate::output::print_result(&result, COLUMNS, format)?;
         }
-        SecurityGroupCommand::Unlink(args) => {
+        RouterCommand::RemoveExternalGateway(args) => {
             let uuids = crate::batch::resolve_uuids(args.uuid)?;
             let mut failed = Vec::new();
             for uuid in uuids {
                 let path = format!(
-                    "{}{}{}", "/api/openstack-security-groups/", uuid, "/unlink/"
+                    "{}{}{}", "/api/openstack-routers/", uuid,
+                    "/remove_external_gateway/"
                 );
                 if dry_run {
                     crate::output::print_dry_run("POST", &path, None, format)?;
@@ -492,6 +539,135 @@ pub async fn run(
                     "{} of the batch failed: {}", failed.len(), failed.join(", ")
                 );
             }
+        }
+        RouterCommand::RemoveRouterInterface(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(REMOVE_ROUTER_INTERFACE_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                REMOVE_ROUTER_INTERFACE_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-routers/", uuid, "/remove_router_interface/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        RouterCommand::SetExternalGateway(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(SET_EXTERNAL_GATEWAY_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                SET_EXTERNAL_GATEWAY_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-routers/", uuid, "/set_external_gateway/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        RouterCommand::SetOk(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-routers/", uuid, "/set_ok/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
+        }
+        RouterCommand::SetRoutes(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(SET_ROUTES_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(SET_ROUTES_REQUEST_SCHEMA, &body)?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/openstack-routers/", uuid, "/set_routes/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
     }
     Ok(())

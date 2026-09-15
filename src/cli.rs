@@ -38,6 +38,12 @@ pub enum OpenstackCommand {
     ///OpenStack floating IPs
     #[command(subcommand)]
     FloatingIp(crate::commands::openstack::floating_ip::FloatingIpCommand),
+    ///OpenStack routers
+    #[command(subcommand)]
+    Router(crate::commands::openstack::router::RouterCommand),
+    ///OpenStack ports
+    #[command(subcommand)]
+    Port(crate::commands::openstack::port::PortCommand),
     ///OpenStack flavors (VM sizes)
     #[command(subcommand)]
     Flavor(crate::commands::openstack::flavor::FlavorCommand),
@@ -165,6 +171,28 @@ pub async fn dispatch(
                 }
                 OpenstackCommand::FloatingIp(cmd) => {
                     crate::commands::openstack::floating_ip::run(
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+                OpenstackCommand::Router(cmd) => {
+                    crate::commands::openstack::router::run(
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+                OpenstackCommand::Port(cmd) => {
+                    crate::commands::openstack::port::run(
                             base_url,
                             token,
                             project,
