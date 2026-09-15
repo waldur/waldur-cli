@@ -2,15 +2,17 @@
 //! on-disk credentials file.
 //!
 //! Every test here touches process-global state (env vars, and indirectly
-//! `$XDG_CONFIG_HOME` for the credentials file) via `directories::ProjectDirs`,
-//! which reads `XDG_CONFIG_HOME` itself -- so every test is `#[serial]` and
-//! points `XDG_CONFIG_HOME` at its own tempdir, otherwise tests running in
-//! parallel (Rust's default) would race on the same env vars/file.
+//! the credentials file) via `directories::ProjectDirs`, which resolves the
+//! config dir from `XDG_CONFIG_HOME` on Linux but from `HOME` on macOS
+//! (`~/Library/Application Support`) -- so every test is `#[serial]` and
+//! points both at its own tempdir, otherwise tests running in parallel
+//! (Rust's default) would race on the same env vars/file, and on macOS they
+//! would overwrite and delete the developer's real saved credentials.
 
 use serial_test::serial;
 use waldur_cli::config::{self, Config, StoredCredentials};
 
-/// Points XDG_CONFIG_HOME at a fresh tempdir and clears the env vars
+/// Points XDG_CONFIG_HOME and HOME at a fresh tempdir and clears the env vars
 /// Config::resolve reads, so each test starts from a clean, isolated slate
 /// regardless of what's actually set in the process running the suite.
 struct Isolated {
@@ -21,6 +23,7 @@ impl Isolated {
     fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
         std::env::set_var("XDG_CONFIG_HOME", dir.path());
+        std::env::set_var("HOME", dir.path());
         std::env::remove_var("WALDUR_API_URL");
         std::env::remove_var("WALDUR_ACCESS_TOKEN");
         std::env::remove_var("WALDUR_PROJECT");
