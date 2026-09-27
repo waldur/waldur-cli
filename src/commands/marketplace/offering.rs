@@ -93,6 +93,7 @@ pub struct OfferingListArgs {
             "category_uuid",
             "citation_count",
             "compliance_checklist",
+            "compliance_checklist_details",
             "components",
             "config_drive_default",
             "country",
