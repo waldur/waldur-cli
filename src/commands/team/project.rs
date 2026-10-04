@@ -96,6 +96,7 @@ pub struct ProjectListArgs {
             "end_date_requested_by",
             "end_date_updated_at",
             "grace_period_days",
+            "has_metrics",
             "image",
             "is_in_grace_period",
             "is_industry",
