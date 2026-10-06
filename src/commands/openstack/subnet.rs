@@ -130,6 +130,7 @@ pub struct SubnetListArgs {
             "skip_router_connection",
             "state",
             "tenant",
+            "tenant_is_managed",
             "tenant_name",
             "url",
             "uuid"]
