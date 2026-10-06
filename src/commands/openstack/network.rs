@@ -120,6 +120,7 @@ pub struct NetworkListArgs {
             "state",
             "subnets",
             "tenant",
+            "tenant_is_managed",
             "tenant_name",
             "tenant_uuid",
             "type",

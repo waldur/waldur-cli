@@ -102,6 +102,7 @@ pub struct TenantListArgs {
             "external_network_ref_uuid",
             "internal_network_id",
             "is_limit_based",
+            "is_managed",
             "is_usage_based",
             "marketplace_category_name",
             "marketplace_category_uuid",
