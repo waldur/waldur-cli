@@ -103,6 +103,7 @@ pub struct ResourceListArgs {
             "customer_slug",
             "customer_uuid",
             "description",
+            "display_limits",
             "downscaled",
             "effective_id",
             "end_date",
