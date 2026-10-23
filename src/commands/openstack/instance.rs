@@ -51,6 +51,8 @@ pub enum InstanceCommand {
     Terminate(InstanceTerminateArgs),
     ///Wait for a --jmespath condition on openstack instances (vms)
     Wait(InstanceWaitArgs),
+    ///Hard reboot openstack instances (vms)
+    HardReboot(InstanceHardRebootArgs),
     ///Restart openstack instances (vms)
     Restart(InstanceRestartArgs),
     ///Set metadata openstack instances (vms)
@@ -281,6 +283,14 @@ pub struct InstanceWaitArgs {
     /// Seconds between polls.
     #[arg(long, default_value_t = 3)]
     pub interval: u64,
+}
+#[derive(clap::Args, Debug)]
+pub struct InstanceHardRebootArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
 }
 #[derive(clap::Args, Debug)]
 pub struct InstanceRestartArgs {
@@ -534,6 +544,39 @@ pub async fn run(
                     format,
                 )
                 .await?;
+        }
+        InstanceCommand::HardReboot(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/openstack-instances/", uuid, "/hard_reboot/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("POST", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::POST,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         InstanceCommand::Restart(args) => {
             let uuids = crate::batch::resolve_uuids(args.uuid)?;
