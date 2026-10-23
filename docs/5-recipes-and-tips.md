@@ -260,4 +260,4 @@ waldur-cli openstack instance list \
   returns each order immediately; `marketplace order wait <uuid> --jmespath "state=='done'"`
   (or any resource's own `wait`) picks up the polling later, from the same script or a
   different one entirely -- see
-  [Waiting on anything, not just orders](4-provisioning-openstack.md#waiting-on-anything-not-just-orders).
+  [Waiting on anything, not just orders](4-provisioning-openstack.md#waiting-on-anything-with-real-async-state-not-just-orders).
