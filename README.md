@@ -74,7 +74,7 @@ waldur-cli openstack instance provision --help
 
 ## Manual
 
-The full guide lives in [`docs/`](docs/):
+The full guide lives in `docs/`:
 
 1. [Getting started](docs/1-getting-started.md) — authentication, profiles, command
    structure, and output formats
