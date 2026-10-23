@@ -153,6 +153,7 @@ pub struct ResourceListArgs {
             "plan_name",
             "plan_unit",
             "plan_uuid",
+            "prepaid_total_component_types",
             "project",
             "project_description",
             "project_effective_end_date",
