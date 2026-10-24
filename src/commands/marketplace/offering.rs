@@ -110,8 +110,6 @@ pub struct OfferingListArgs {
             "files",
             "full_description",
             "getting_started",
-            "google_calendar_is_public",
-            "google_calendar_link",
             "has_compliance_requirements",
             "helpdesk_url",
             "image",
