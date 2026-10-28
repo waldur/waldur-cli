@@ -30,6 +30,7 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
     ("science_domain_uuid", crate::filter::FilterKind::Str),
     ("science_sub_domain_uuid", crate::filter::FilterKind::Str),
     ("slug", crate::filter::FilterKind::Str),
+    ("user_role", crate::filter::FilterKind::Str),
     ("user_uuid", crate::filter::FilterKind::Str),
     ("user_uuid_with_active_role", crate::filter::FilterKind::Str),
 ];
