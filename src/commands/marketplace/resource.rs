@@ -180,6 +180,7 @@ pub struct ResourceListArgs {
             "spending_limit_status",
             "spending_limits",
             "state",
+            "terminated_at",
             "url",
             "usage_limit_restriction",
             "usage_limit_resumes_at",
