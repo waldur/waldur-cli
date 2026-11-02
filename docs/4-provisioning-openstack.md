@@ -132,7 +132,7 @@ all modeled in the schema):
 
 ```bash
 # find the offering
-waldur-cli marketplace offering list --filter type=Marketplace.Slurm
+waldur-cli marketplace offering list --filter type=Marketplace.SiteAgent
 
 # provision (offering + project + whatever attributes/limits that offering wants)
 waldur-cli marketplace resource provision --request '{
