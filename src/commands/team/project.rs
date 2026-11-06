@@ -80,6 +80,7 @@ pub struct ProjectListArgs {
             "affiliation_code",
             "affiliation_name",
             "affiliation_uuid",
+            "awarded_proposal",
             "backend_id",
             "billing_price_estimate",
             "created",
