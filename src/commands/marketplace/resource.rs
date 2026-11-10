@@ -65,6 +65,8 @@ pub enum ResourceCommand {
     Terminate(ResourceTerminateArgs),
     ///Wait for a --jmespath condition on marketplace resources (provision/terminate any offering)
     Wait(ResourceWaitArgs),
+    ///Order period usage marketplace resources (provision/terminate any offering)
+    OrderPeriodUsage(ResourceOrderPeriodUsageArgs),
     ///Set spending limits marketplace resources (provision/terminate any offering)
     SetSpendingLimits(ResourceSetSpendingLimitsArgs),
     ///Unlink marketplace resources (provision/terminate any offering)
@@ -305,6 +307,14 @@ pub struct ResourceWaitArgs {
     pub interval: u64,
 }
 #[derive(clap::Args, Debug)]
+pub struct ResourceOrderPeriodUsageArgs {
+    /// UUID(s) to operate on. Omit to read them from stdin instead,
+    /// one per line -- either a bare UUID or a JSON object with a
+    /// `uuid` field, so piping `list --format ndjson` straight in
+    /// works without an intermediate `jq -r .uuid`.
+    pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
 #[command(
     group(
         clap::ArgGroup::new(
@@ -480,6 +490,39 @@ pub async fn run(
                     format,
                 )
                 .await?;
+        }
+        ResourceCommand::OrderPeriodUsage(args) => {
+            let uuids = crate::batch::resolve_uuids(args.uuid)?;
+            let mut failed = Vec::new();
+            for uuid in uuids {
+                let path = format!(
+                    "{}{}{}", "/api/marketplace-resources/", uuid, "/order_period_usage/"
+                );
+                if dry_run {
+                    crate::output::print_dry_run("GET", &path, None, format)?;
+                    continue;
+                }
+                match crate::http::call_one(
+                        base_url,
+                        token,
+                        reqwest::Method::GET,
+                        &path,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(result) => crate::output::print_result(&result, COLUMNS, format)?,
+                    Err(err) => {
+                        crate::batch::report_error(&uuid, &err);
+                        failed.push(uuid);
+                    }
+                }
+            }
+            if !failed.is_empty() {
+                anyhow::bail!(
+                    "{} of the batch failed: {}", failed.len(), failed.join(", ")
+                );
+            }
         }
         ResourceCommand::SetSpendingLimits(args) => {
             if let Some(fmt) = args.generate_skeleton {
