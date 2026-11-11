@@ -95,7 +95,8 @@ pub struct ResourceListArgs {
         long,
         value_delimiter = ',',
         value_parser = clap::builder::PossibleValuesParser::new(
-            ["attributes",
+            ["api_key_counts",
+            "attributes",
             "available_actions",
             "backend_id",
             "backend_metadata",
