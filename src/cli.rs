@@ -79,6 +79,9 @@ pub enum MarketplaceCommand {
     ///Marketplace orders (check status of a submitted provision/terminate)
     #[command(subcommand)]
     Order(crate::commands::marketplace::order::OrderCommand),
+    ///Resource API keys (credentials issued for a marketplace resource)
+    #[command(subcommand)]
+    ApiKey(crate::commands::marketplace::api_key::ApiKeyCommand),
 }
 ///Manage your own authentication credentials (personal access tokens, SSH keys)
 #[derive(clap::Subcommand, Debug)]
@@ -300,6 +303,17 @@ pub async fn dispatch(
                 }
                 MarketplaceCommand::Order(cmd) => {
                     crate::commands::marketplace::order::run(
+                            base_url,
+                            token,
+                            project,
+                            dry_run,
+                            cmd,
+                            format,
+                        )
+                        .await
+                }
+                MarketplaceCommand::ApiKey(cmd) => {
+                    crate::commands::marketplace::api_key::run(
                             base_url,
                             token,
                             project,
