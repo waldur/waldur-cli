@@ -101,6 +101,7 @@ pub struct UserListArgs {
             "is_active",
             "is_admin_deactivated",
             "is_identity_manager",
+            "is_service_account",
             "is_staff",
             "is_support",
             "job_title",
