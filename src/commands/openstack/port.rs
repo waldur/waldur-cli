@@ -104,6 +104,7 @@ pub struct PortListArgs {
             "error_message",
             "error_traceback",
             "fixed_ips",
+            "floating_ip_addresses",
             "floating_ips",
             "is_limit_based",
             "is_usage_based",
