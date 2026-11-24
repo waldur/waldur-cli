@@ -107,6 +107,7 @@ pub struct ResourceListArgs {
             "created",
             "creation_order",
             "current_usages",
+            "customer_abbreviation",
             "customer_name",
             "customer_slug",
             "customer_uuid",
