@@ -50,6 +50,10 @@ const FILTER_SPEC: &[(&str, crate::filter::FilterKind)] = &[
 ];
 const RESOURCE_WEB_PATH: &str = "/resource-details/{uuid}";
 const PROVISION_SKELETON: &str = "{\n  \"accepting_terms_of_service\": true,\n  \"attributes\": {\n    \"description\": null,\n    \"name\": null\n  },\n  \"callback_url\": null,\n  \"limits\": null,\n  \"offering\": \"\",\n  \"plan\": null,\n  \"project\": \"\",\n  \"request_comment\": null,\n  \"slug\": null,\n  \"spending_limits\": null,\n  \"start_date\": null\n}";
+const REVEAL_OPTION_SECRET_SKELETON: &str = "{\n  \"option_name\": \"\"\n}";
+const REVEAL_OPTION_SECRET_REQUEST_SCHEMA: &str = "{\"properties\":{\"option_name\":{\"type\":\"string\"}},\"required\":[\"option_name\"],\"type\":\"object\"}";
+const SET_OPTION_SECRET_SKELETON: &str = "{\n  \"option_name\": \"\",\n  \"value\": \"\"\n}";
+const SET_OPTION_SECRET_REQUEST_SCHEMA: &str = "{\"properties\":{\"option_name\":{\"type\":\"string\"},\"value\":{\"type\":\"string\"}},\"required\":[\"option_name\",\"value\"],\"type\":\"object\"}";
 const SET_SPENDING_LIMITS_SKELETON: &str = "{\n  \"spending_limits\": {}\n}";
 const SET_SPENDING_LIMITS_REQUEST_SCHEMA: &str = "{\"properties\":{\"spending_limits\":{\"type\":\"object\"}},\"required\":[\"spending_limits\"],\"type\":\"object\"}";
 ///Marketplace resources (provision/terminate any offering)
@@ -67,6 +71,10 @@ pub enum ResourceCommand {
     Wait(ResourceWaitArgs),
     ///Order period usage marketplace resources (provision/terminate any offering)
     OrderPeriodUsage(ResourceOrderPeriodUsageArgs),
+    ///Reveal option secret marketplace resources (provision/terminate any offering)
+    RevealOptionSecret(ResourceRevealOptionSecretArgs),
+    ///Set option secret marketplace resources (provision/terminate any offering)
+    SetOptionSecret(ResourceSetOptionSecretArgs),
     ///Set spending limits marketplace resources (provision/terminate any offering)
     SetSpendingLimits(ResourceSetSpendingLimitsArgs),
     ///Unlink marketplace resources (provision/terminate any offering)
@@ -144,6 +152,7 @@ pub struct ResourceListArgs {
             "offering_thumbnail",
             "offering_type",
             "offering_uuid",
+            "option_secrets",
             "options",
             "order_in_progress",
             "parent_name",
@@ -315,6 +324,64 @@ pub struct ResourceOrderPeriodUsageArgs {
     /// `uuid` field, so piping `list --format ndjson` straight in
     /// works without an intermediate `jq -r .uuid`.
     pub uuid: Vec<String>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "resource_reveal_option_secret_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct ResourceRevealOptionSecretArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
+}
+#[derive(clap::Args, Debug)]
+#[command(
+    group(
+        clap::ArgGroup::new(
+            "resource_set_option_secret_body"
+        ).required(true).args(["request", "request_file", "generate_skeleton"])
+    )
+)]
+pub struct ResourceSetOptionSecretArgs {
+    pub uuid: Option<String>,
+    /// Request body as inline JSON. Use --generate-skeleton for
+    /// a template, or --request-file to read it from a file.
+    #[arg(long)]
+    pub request: Option<String>,
+    /// Read the request body from a JSON or YAML file (e.g. a
+    /// filled-in --generate-skeleton template).
+    #[arg(long, value_name = "PATH")]
+    pub request_file: Option<std::path::PathBuf>,
+    /// Print a fillable request-body template and exit, instead
+    /// of sending a request (json or yaml; default json).
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..= 1,
+        default_missing_value = "json",
+        value_name = "FORMAT"
+    )]
+    pub generate_skeleton: Option<crate::request::SkeletonFormat>,
 }
 #[derive(clap::Args, Debug)]
 #[command(
@@ -525,6 +592,72 @@ pub async fn run(
                     "{} of the batch failed: {}", failed.len(), failed.join(", ")
                 );
             }
+        }
+        ResourceCommand::RevealOptionSecret(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(REVEAL_OPTION_SECRET_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                REVEAL_OPTION_SECRET_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/marketplace-resources/", uuid, "/reveal_option_secret/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
+        }
+        ResourceCommand::SetOptionSecret(args) => {
+            if let Some(fmt) = args.generate_skeleton {
+                crate::request::print_skeleton(SET_OPTION_SECRET_SKELETON, fmt)?;
+                return Ok(());
+            }
+            let body = crate::request::load_body(
+                args.request.as_deref(),
+                args.request_file.as_deref(),
+            )?;
+            crate::request::validate_request_body(
+                SET_OPTION_SECRET_REQUEST_SCHEMA,
+                &body,
+            )?;
+            let uuid = args
+                .uuid
+                .as_deref()
+                .context("this command requires a <uuid> argument")?;
+            let path = format!(
+                "{}{}{}", "/api/marketplace-resources/", uuid, "/set_option_secret/"
+            );
+            if dry_run {
+                return crate::output::print_dry_run("POST", &path, Some(&body), format);
+            }
+            let result = crate::http::call_one(
+                    base_url,
+                    token,
+                    reqwest::Method::POST,
+                    &path,
+                    Some(&body),
+                )
+                .await?;
+            crate::output::print_result(&result, COLUMNS, format)?;
         }
         ResourceCommand::SetSpendingLimits(args) => {
             if let Some(fmt) = args.generate_skeleton {
